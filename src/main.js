@@ -481,6 +481,15 @@ function setupIntro() {
     return;
   }
 
+  // Check if video file exists and can load
+  video.addEventListener('error', () => {
+    console.log('Intro video not found, skipping to start screen');
+    endIntroAndStartLoading();
+  });
+
+  // Try to load the video metadata
+  video.load();
+
   startBtn.addEventListener('click', () => {
     // Hide the click prompt, show & play video with audio
     clickPrompt.style.display = 'none';
