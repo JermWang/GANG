@@ -58,6 +58,10 @@ export class Player {
           if (child.material) {
             child.material.metalness = 0;
             child.material.roughness = 0.8;
+            // Ensure texture is properly configured
+            if (child.material.map && child.material.map.image) {
+              child.material.map.needsUpdate = true;
+            }
           }
         }
         // Store right hand bone reference for gun attachment
