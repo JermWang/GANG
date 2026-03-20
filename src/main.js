@@ -454,6 +454,13 @@ function endIntroAndStartLoading() {
 
   const overlay = document.getElementById('intro-overlay');
   const video = document.getElementById('intro-video');
+  const clickPrompt = document.getElementById('intro-click-prompt');
+
+  // Immediately hide click prompt to prevent flashback
+  if (clickPrompt) clickPrompt.style.display = 'none';
+  
+  // Force overlay to stay hidden
+  overlay.style.pointerEvents = 'none';
 
   // Fade out intro overlay
   overlay.classList.add('fade-out');
@@ -490,19 +497,28 @@ function setupIntro() {
   video.addEventListener('error', () => {
     console.log('Intro video not found, skipping to start screen');
     endIntroAndStartLoading();
-  });
+  }, { once: true });
 
   // Try to load the video metadata
   video.load();
 
   startBtn.addEventListener('click', () => {
-    // Hide the click prompt, show & play video with audio
+    // Hide the click prompt immediately and permanently
     clickPrompt.style.display = 'none';
+    clickPrompt.style.visibility = 'hidden';
     video.classList.add('playing');
-    video.play().catch(() => {
-      // If video play fails, skip to game
-      endIntroAndStartLoading();
-    });
+    
+    // Ensure video doesn't loop
+    video.loop = false;
+    
+    // Play video with audio
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // If video play fails, skip to game
+        endIntroAndStartLoading();
+      });
+    }
 
     // Add a skip button once video is playing
     const skipBtn = document.createElement('button');
@@ -513,12 +529,12 @@ function setupIntro() {
       endIntroAndStartLoading();
     });
     overlay.appendChild(skipBtn);
-  });
+  }, { once: true });
 
   // When video ends naturally, transition to start screen
   video.addEventListener('ended', () => {
     endIntroAndStartLoading();
-  });
+  }, { once: true });
 }
 
 // ============================
