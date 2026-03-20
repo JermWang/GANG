@@ -2,7 +2,6 @@
   "framework": null,
   "installCommand": "echo 'Skipping install'",
   "buildCommand": "echo 'Skipping build'",
-  "outputDirectory": "deploy",
   "headers": [
     {
       "source": "/(.*).mp4",
