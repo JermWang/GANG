@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "postinstall": "rm -f node_modules/.bin/vite* 2>/dev/null || del /f node_modules\\.bin\\vite* 2>nul || true",
     "dev": "node build.js",
     "preview": "node build.js preview"
   },
