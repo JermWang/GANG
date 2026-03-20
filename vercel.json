@@ -1,10 +1,6 @@
 {
-  "buildCommand": "node build.js build",
-  "build": {
-    "env": {
-      "NODE_VERSION": "18"
-    }
-  },
+  "buildCommand": null,
+  "outputDirectory": "dist",
   "headers": [
     {
       "source": "/(.*).mp4",
