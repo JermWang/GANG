@@ -3,8 +3,8 @@ node_modules/
 .pnp
 .pnp.js
 
-# Build output
-dist/
+# Build output (ALLOW dist for Vercel static deployment)
+# dist/
 dist-ssr/
 *.local
 
