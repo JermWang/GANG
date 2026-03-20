@@ -171,7 +171,7 @@ function startGame() {
   startScreen.classList.add('fade-out');
   setTimeout(() => { startScreen.style.display = 'none'; }, 1000);
 
-  document.getElementById('hud').classList.remove('hidden');
+  // HUD already visible from start screen
   document.getElementById('game-canvas').requestPointerLock();
 
   // Snap camera to correct 3rd person position immediately
@@ -465,6 +465,10 @@ function endIntroAndStartLoading() {
   // Show start screen and begin loading the game
   const startScreen = document.getElementById('start-screen');
   startScreen.style.display = '';
+  
+  // Show HUD components on start screen (GTA style)
+  document.getElementById('hud').classList.remove('hidden');
+  
   init();
 }
 
@@ -477,6 +481,7 @@ function setupIntro() {
   if (!overlay || !video || !startBtn) {
     // No intro elements, just start normally
     document.getElementById('start-screen').style.display = '';
+    document.getElementById('hud').classList.remove('hidden');
     init();
     return;
   }
