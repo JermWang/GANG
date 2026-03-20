@@ -8,6 +8,16 @@ export default defineConfig({
   build: {
     target: 'esnext',
     outDir: 'dist',
-    assetsInlineLimit: 0
-  }
+    assetsInlineLimit: 0,
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'three': ['three'],
+          'postprocessing': ['three/examples/jsm/postprocessing/EffectComposer', 'three/examples/jsm/postprocessing/RenderPass']
+        }
+      }
+    }
+  },
+  assetsInclude: ['**/*.mp4', '**/*.glb', '**/*.gltf']
 });
