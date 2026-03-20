@@ -1,4 +1,5 @@
 {
+  "buildCommand": "node build.js build",
   "build": {
     "env": {
       "NODE_VERSION": "18"
