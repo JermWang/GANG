@@ -1,4 +1,5 @@
 {
+  "installCommand": "echo 'Skipping install - static deployment'",
   "buildCommand": null,
   "outputDirectory": "dist",
   "headers": [
