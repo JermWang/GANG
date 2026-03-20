@@ -4,9 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "postinstall": "chmod -R +x node_modules/.bin 2>/dev/null || true",
     "dev": "node build.js",
-    "build": "node build.js build",
     "preview": "node build.js preview"
   },
   "dependencies": {
