@@ -1,9 +1,4 @@
 {
-  "functions": {
-    "public/**/*": {
-      "maxDuration": 30
-    }
-  },
   "build": {
     "env": {
       "NODE_VERSION": "18"
@@ -11,7 +6,7 @@
   },
   "headers": [
     {
-      "source": "/public/(.*)",
+      "source": "/static/(.*)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -20,7 +15,7 @@
       ]
     },
     {
-      "source": "/(.*\\.(mp4|webm|ogg|mp3|wav))",
+      "source": "/(.*\\.(mp4|webm|ogg|mp3|wav|glb|gltf|jpg|png|css|js))",
       "headers": [
         {
           "key": "Cache-Control",
