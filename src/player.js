@@ -42,29 +42,38 @@ export class Player {
 
   async loadModel() {
     try {
-      const data = await loadModel('/tommy_vercetti.glb');
-      const model = data.scene;
+      // Load Tommy Vercetti FBX (character mesh + skeleton)
+      const charPath = '/assets/rigged/PC _ Computer - Grand Theft Auto_ Vice City - Characters - Tommy Vercetti.fbx';
+      const charData = await loadModel(charPath);
+      const model = charData.scene;
 
-      // GLTF export baked the 0.01 FBX scale into mesh + bones (~0.018m tall)
-      // Scale up by 100 to get to proper ~1.8m height
-      model.scale.setScalar(100);
+      // FBX models from Mixamo come in cm scale — convert to meters
+      const rawHeight = getModelHeight(model);
+      const targetHeight = PLAYER_HEIGHT; // 1.8m
+      const scale = targetHeight / rawHeight;
+      model.scale.setScalar(scale);
 
-      // Enable shadows and fix materials on all meshes
+      // Center the model on its origin (fix pivot point)
+      const box = new THREE.Box3().setFromObject(model);
+      const center = box.getCenter(new THREE.Vector3());
+      // Only offset X and Z to center horizontally; keep Y at feet
+      model.position.x -= center.x;
+      model.position.z -= center.z;
+      model.position.y -= box.min.y; // put feet at y=0
+
+      // Enable shadows and fix materials
       model.traverse((child) => {
         if (child.isMesh) {
           child.castShadow = true;
           child.receiveShadow = true;
-          // Fix Blender export metalness (was 1.0, making model dark)
           if (child.material) {
             child.material.metalness = 0;
             child.material.roughness = 0.8;
-            // Ensure texture is properly configured
             if (child.material.map && child.material.map.image) {
               child.material.map.needsUpdate = true;
             }
           }
         }
-        // Store right hand bone reference for gun attachment
         if (child.isBone && child.name.includes('RightHand') && !child.name.includes('Index') && !child.name.includes('Thumb')) {
           this.rightHandBone = child;
         }
@@ -72,23 +81,49 @@ export class Player {
 
       this.mesh.add(model);
 
-      // Setup animations if available
-      if (data.animations.length > 0) {
-        const { mixer, actions } = setupAnimations(model, data.animations);
-        this.mixer = mixer;
-        this.actions = actions;
+      // Setup mixer on the character model
+      this.mixer = new THREE.AnimationMixer(model);
+      this.actions = new Map();
 
-        // Try to play idle animation
-        const idleName = this._findAnim(['Idle', 'idle', 'IDLE']);
-        if (idleName) {
-          this.currentAction = playAnimation(this.actions, idleName, null);
+      // Load Mixamo animation FBXs and bind them to the character
+      const animFiles = {
+        'Idle':     '/assets/rigged/pistol idle.fbx',
+        'Walk':     '/assets/rigged/pistol walk.fbx',
+        'Run':      '/assets/rigged/Pistol Run.fbx',
+        'Sprint':   '/assets/rigged/Fast Run.fbx',
+        'Jump':     '/assets/rigged/Jump.fbx',
+        'Strafe':   '/assets/rigged/pistol strafe.fbx',
+        'WalkBack': '/assets/rigged/pistol walk backward.fbx',
+        'RunBack':  '/assets/rigged/pistol run backward.fbx',
+      };
+
+      const animPromises = Object.entries(animFiles).map(async ([name, path]) => {
+        try {
+          const animData = await loadModel(path);
+          if (animData.animations.length > 0) {
+            const clip = animData.animations[0];
+            clip.name = name; // rename clip to our standard name
+            const action = this.mixer.clipAction(clip);
+            this.actions.set(name, action);
+          }
+        } catch (e) {
+          console.warn(`Could not load animation: ${name}`, e);
         }
+      });
+
+      await Promise.all(animPromises);
+
+      // Start with idle animation
+      const idleAction = this.actions.get('Idle');
+      if (idleAction) {
+        idleAction.play();
+        this.currentAction = idleAction;
       }
 
       this.modelReady = true;
-      console.log('Player model loaded:', data.animations.map(a => a.name));
+      console.log('Player model loaded with animations:', [...this.actions.keys()]);
     } catch (e) {
-      console.warn('Could not load player GLB, using fallback box mesh', e);
+      console.warn('Could not load player FBX, using fallback box mesh', e);
       this._createFallbackMesh();
       this.modelReady = true;
     }
