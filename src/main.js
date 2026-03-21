@@ -171,14 +171,16 @@ function setupNavBar() {
   const overlay = document.getElementById('panel-overlay');
   const navLinks = document.querySelectorAll('.nav-link[data-panel]');
   const closeBtns = document.querySelectorAll('.panel-close[data-close]');
+  let activePanel = null;
 
   function openPanel(panelId) {
-    // Hide all panels first
-    overlay.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+    // Remove active from all panels
+    overlay.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     const target = document.getElementById(panelId);
     if (target) {
-      target.style.display = '';
+      target.classList.add('active');
       overlay.classList.remove('hidden');
+      activePanel = panelId;
       // Exit pointer lock when panel is open
       if (document.pointerLockElement) document.exitPointerLock();
     }
@@ -188,16 +190,17 @@ function setupNavBar() {
 
   function closePanel() {
     overlay.classList.add('hidden');
+    overlay.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     navLinks.forEach(l => l.classList.remove('active'));
+    activePanel = null;
   }
 
   navLinks.forEach(link => {
     link.addEventListener('click', (e) => {
       e.stopPropagation();
       const panelId = link.dataset.panel;
-      // Toggle: if already open, close it
-      const target = document.getElementById(panelId);
-      if (!overlay.classList.contains('hidden') && target && target.style.display !== 'none') {
+      // Toggle: if same panel is open, close; otherwise switch
+      if (activePanel === panelId) {
         closePanel();
       } else {
         openPanel(panelId);
@@ -217,6 +220,13 @@ function setupNavBar() {
   if (backdrop) {
     backdrop.addEventListener('click', closePanel);
   }
+
+  // ESC key to close
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && activePanel) {
+      closePanel();
+    }
+  });
 }
 
 function startGame() {

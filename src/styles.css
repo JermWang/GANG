@@ -1062,10 +1062,11 @@ body {
 #panel-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: 3500;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding-top: 48px;
   cursor: default;
 }
 
@@ -1108,11 +1109,11 @@ body {
 }
 
 .panel-header h2 {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 2.2rem;
-  letter-spacing: 0.12em;
+  font-family: 'Pricedown Bl', 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: 0.08em;
   color: #e8a000;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  text-shadow: 2px 2px 0 #000, 0 2px 4px rgba(0,0,0,0.5);
 }
 
 .panel-close {
@@ -1141,11 +1142,12 @@ body {
 }
 
 .panel-body h3 {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.8rem;
-  letter-spacing: 0.1em;
+  font-family: 'Pricedown Bl', 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  letter-spacing: 0.08em;
   color: #fff;
   margin-bottom: 0.2rem;
+  text-shadow: 1px 1px 0 #000;
 }
 
 .panel-desc {
