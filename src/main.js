@@ -119,7 +119,9 @@ async function init() {
 
   const gameCanvas = document.getElementById('game-canvas');
   gameCanvas.addEventListener('click', () => {
-    if (gameStarted && !interactions.isPanelOpen()) {
+    const panelOverlay = document.getElementById('panel-overlay');
+    const panelOpen = panelOverlay && !panelOverlay.classList.contains('hidden');
+    if (gameStarted && !interactions.isPanelOpen() && !panelOpen) {
       gameCanvas.requestPointerLock();
     }
   });

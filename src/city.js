@@ -56,7 +56,7 @@ export class City {
     const sizeZ = AREA_HALF_Z * 2 + 20;
     const geo = new THREE.PlaneGeometry(sizeX, sizeZ);
     const mat = createSidewalkMaterial(Math.round(sizeX / 6), Math.round(sizeZ / 6));
-    mat.color = new THREE.Color('#5a4a38');
+    mat.color = new THREE.Color('#8a8070');
     const ground = new THREE.Mesh(geo, mat);
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -0.05;

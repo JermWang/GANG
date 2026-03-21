@@ -64,7 +64,7 @@ export function createAsphaltMaterial(repeatX = 4, repeatY = 20) {
     map: loadTex('asphalt_diff.jpg', repeatX, repeatY),
     normalMap: loadTex('asphalt_norm.jpg', repeatX, repeatY),
     normalScale: new THREE.Vector2(0.4, 0.4),
-    color: new THREE.Color('#706858'),
+    color: new THREE.Color('#a09890'),
     roughness: 0.92,
   });
 }
@@ -74,7 +74,7 @@ export function createSidewalkMaterial(repeatX = 4, repeatY = 20) {
     map: loadTex('concrete_diff.jpg', repeatX, repeatY),
     normalMap: loadTex('concrete_norm.jpg', repeatX, repeatY),
     normalScale: new THREE.Vector2(0.3, 0.3),
-    color: new THREE.Color('#9a9080'),
+    color: new THREE.Color('#b0a898'),
     roughness: 0.88,
   });
 }
