@@ -153,6 +153,9 @@ async function init() {
     });
   }
 
+  // Nav bar panel buttons
+  setupNavBar();
+
   // Loading complete
   updateLoader(100, 'READY');
   setTimeout(() => {
@@ -162,6 +165,58 @@ async function init() {
   }, 400);
 
   animate();
+}
+
+function setupNavBar() {
+  const overlay = document.getElementById('panel-overlay');
+  const navLinks = document.querySelectorAll('.nav-link[data-panel]');
+  const closeBtns = document.querySelectorAll('.panel-close[data-close]');
+
+  function openPanel(panelId) {
+    // Hide all panels first
+    overlay.querySelectorAll('.panel').forEach(p => p.style.display = 'none');
+    const target = document.getElementById(panelId);
+    if (target) {
+      target.style.display = '';
+      overlay.classList.remove('hidden');
+      // Exit pointer lock when panel is open
+      if (document.pointerLockElement) document.exitPointerLock();
+    }
+    // Highlight active nav link
+    navLinks.forEach(l => l.classList.toggle('active', l.dataset.panel === panelId));
+  }
+
+  function closePanel() {
+    overlay.classList.add('hidden');
+    navLinks.forEach(l => l.classList.remove('active'));
+  }
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const panelId = link.dataset.panel;
+      // Toggle: if already open, close it
+      const target = document.getElementById(panelId);
+      if (!overlay.classList.contains('hidden') && target && target.style.display !== 'none') {
+        closePanel();
+      } else {
+        openPanel(panelId);
+      }
+    });
+  });
+
+  closeBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closePanel();
+    });
+  });
+
+  // Click backdrop to close
+  const backdrop = overlay.querySelector('.panel-backdrop');
+  if (backdrop) {
+    backdrop.addEventListener('click', closePanel);
+  }
 }
 
 function startGame() {
@@ -254,15 +309,15 @@ function animate() {
       playFootstep(player.keys.shift);
     }
   } else {
-    // Cinematic idle camera — slow orbit like GTA loading
+    // Cinematic idle camera — slow orbit around gas station
     const t = elapsed;
-    const radius = 80;
+    const radius = 30;
     camera.position.set(
-      Math.sin(t * 0.08) * radius,
-      25 + Math.sin(t * 0.05) * 5,
-      Math.cos(t * 0.08) * radius
+      Math.sin(t * 0.1) * radius - 5,
+      12 + Math.sin(t * 0.06) * 3,
+      Math.cos(t * 0.1) * radius
     );
-    camera.lookAt(0, 10, 0);
+    camera.lookAt(-5, 3, -10);
   }
 
   composer.render();

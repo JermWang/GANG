@@ -11,6 +11,28 @@
   <link rel="stylesheet" href="/src/styles.css" />
 </head>
 <body>
+  <!-- UNIVERSAL NAV BAR -->
+  <nav id="gang-nav">
+    <div class="nav-logo">
+      <img src="/gang-text.png" alt="$GANG" class="nav-logo-img" />
+    </div>
+    <div class="nav-links">
+      <button class="nav-link" data-panel="panel-missions">MISSIONS</button>
+      <button class="nav-link" data-panel="panel-wanted">MOST WANTED</button>
+      <button class="nav-link" data-panel="panel-rewards">REWARDS</button>
+      <button class="nav-link" data-panel="panel-buy">BUY $GANG</button>
+      <button class="nav-link" data-panel="panel-community">COMMUNITY</button>
+    </div>
+    <div class="nav-socials">
+      <a href="#" target="_blank" class="nav-social" title="Twitter / X">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+      </a>
+      <a href="#" target="_blank" class="nav-social" title="Telegram">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+      </a>
+    </div>
+  </nav>
+
   <!-- INTRO VIDEO OVERLAY -->
   <div id="intro-overlay">
     <video id="intro-video" playsinline preload="auto">
@@ -175,20 +197,121 @@
     </div>
   </div>
 
-  <!-- INTERACTION PANELS (GTA pause-menu style) -->
+  <!-- GAMIFIED PANELS (opened via nav bar) -->
   <div id="panel-overlay" class="hidden">
     <div class="panel-backdrop"></div>
 
-    <!-- BANK — Buy $GANG -->
-    <div class="panel" id="panel-bank">
+    <!-- MISSIONS — HQ Task Board -->
+    <div class="panel" id="panel-missions">
       <div class="panel-header">
         <div class="panel-header-line"></div>
-        <h2>GANG BANK</h2>
+        <h2>HQ — MISSION BOARD</h2>
         <button class="panel-close" data-close>✕</button>
       </div>
       <div class="panel-body">
-        <h3>BUY $GANG</h3>
-        <p class="panel-desc">Stack your bags. The grind starts here.</p>
+        <h3>ACTIVE MISSIONS</h3>
+        <p class="panel-desc">Tasks drop from HQ. You in or you out?</p>
+        <div class="panel-divider"></div>
+        <div class="mission-list">
+          <div class="mission-card">
+            <div class="mission-rank">RANK D</div>
+            <div class="mission-info">
+              <h4>RECRUIT A SOLDIER</h4>
+              <p>Onboard a new member to the Telegram</p>
+            </div>
+            <div class="mission-reward">+0.05 SOL</div>
+          </div>
+          <div class="mission-card">
+            <div class="mission-rank">RANK C</div>
+            <div class="mission-info">
+              <h4>SPREAD THE WORD</h4>
+              <p>Get a tweet about $GANG to 50+ likes</p>
+            </div>
+            <div class="mission-reward">+0.1 SOL</div>
+          </div>
+          <div class="mission-card hot">
+            <div class="mission-rank">RANK B</div>
+            <div class="mission-info">
+              <h4>KOL CONNECT</h4>
+              <p>Onboard a KOL with 10K+ followers</p>
+            </div>
+            <div class="mission-reward">+0.5 SOL</div>
+          </div>
+          <div class="mission-card hot">
+            <div class="mission-rank">RANK A</div>
+            <div class="mission-info">
+              <h4>GO VIRAL</h4>
+              <p>Get a $GANG tweet to 1K+ engagement</p>
+            </div>
+            <div class="mission-reward">+1 SOL</div>
+          </div>
+        </div>
+        <p class="panel-note">Rewards paid from 50% creator fee split dedicated to community.</p>
+      </div>
+    </div>
+
+    <!-- MOST WANTED — Leaderboard -->
+    <div class="panel" id="panel-wanted">
+      <div class="panel-header">
+        <div class="panel-header-line"></div>
+        <h2>MOST WANTED</h2>
+        <button class="panel-close" data-close>✕</button>
+      </div>
+      <div class="panel-body">
+        <h3>TOP EARNERS</h3>
+        <p class="panel-desc">The real ones who grind, complete missions, and stack SOL.</p>
+        <div class="panel-divider"></div>
+        <div class="wanted-board">
+          <div class="wanted-row header"><span>#</span><span>NAME</span><span>MISSIONS</span><span>SOL EARNED</span></div>
+          <div class="wanted-row gold"><span>1</span><span>OG_GRINDER</span><span>42</span><span>12.5 SOL</span></div>
+          <div class="wanted-row silver"><span>2</span><span>BLOCK_RUNNER</span><span>38</span><span>10.2 SOL</span></div>
+          <div class="wanted-row bronze"><span>3</span><span>STREET_KING</span><span>31</span><span>8.7 SOL</span></div>
+          <div class="wanted-row"><span>4</span><span>HUSTLE_QUEEN</span><span>27</span><span>7.1 SOL</span></div>
+          <div class="wanted-row"><span>5</span><span>GANG_SHILL</span><span>22</span><span>5.4 SOL</span></div>
+        </div>
+        <p class="panel-note">Leaderboard updates weekly. Top grinders get bonus payouts.</p>
+      </div>
+    </div>
+
+    <!-- REWARDS — Rep & Rank System -->
+    <div class="panel" id="panel-rewards">
+      <div class="panel-header">
+        <div class="panel-header-line"></div>
+        <h2>REWARDS & REP</h2>
+        <button class="panel-close" data-close>✕</button>
+      </div>
+      <div class="panel-body">
+        <h3>HOW IT WORKS</h3>
+        <p class="panel-desc">The more you grind, the higher your rank in the gang.</p>
+        <div class="panel-divider"></div>
+        <div class="rank-tiers">
+          <div class="rank-card"><div class="rank-icon">🔫</div><div class="rank-name">RECRUIT</div><div class="rank-req">0 Missions</div></div>
+          <div class="rank-card"><div class="rank-icon">💀</div><div class="rank-name">SOLDIER</div><div class="rank-req">5 Missions</div></div>
+          <div class="rank-card"><div class="rank-icon">🔥</div><div class="rank-name">LIEUTENANT</div><div class="rank-req">15 Missions</div></div>
+          <div class="rank-card"><div class="rank-icon">👑</div><div class="rank-name">BOSS</div><div class="rank-req">30 Missions</div></div>
+          <div class="rank-card"><div class="rank-icon">⭐</div><div class="rank-name">KINGPIN</div><div class="rank-req">50+ Missions</div></div>
+        </div>
+        <div class="panel-divider"></div>
+        <h3>PAYOUT STRUCTURE</h3>
+        <p class="panel-desc">50% of creator fees are split among active community members and holders.</p>
+        <div class="payout-info">
+          <div class="token-row"><span>SOURCE</span><span>50% Creator Fees</span></div>
+          <div class="token-row"><span>FREQUENCY</span><span>Weekly</span></div>
+          <div class="token-row"><span>PAYMENT</span><span class="green">SOL to your wallet</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUY $GANG -->
+    <div class="panel" id="panel-buy">
+      <div class="panel-header">
+        <div class="panel-header-line"></div>
+        <h2>BUY $GANG</h2>
+        <button class="panel-close" data-close>✕</button>
+      </div>
+      <div class="panel-body">
+        <h3>STACK YOUR BAGS</h3>
+        <p class="panel-desc">The grind starts here.</p>
         <div class="panel-divider"></div>
         <div class="token-info">
           <div class="token-row"><span>CONTRACT</span><span class="mono">TBA</span></div>
@@ -203,134 +326,16 @@
       </div>
     </div>
 
-    <!-- LIQUOR STORE — Tokenomics -->
-    <div class="panel" id="panel-liquor">
+    <!-- COMMUNITY -->
+    <div class="panel" id="panel-community">
       <div class="panel-header">
         <div class="panel-header-line"></div>
-        <h2>GANG LIQUOR</h2>
+        <h2>COMMUNITY</h2>
         <button class="panel-close" data-close>✕</button>
       </div>
       <div class="panel-body">
-        <h3>TOKENOMICS</h3>
-        <p class="panel-desc">Know what you're holding.</p>
-        <div class="panel-divider"></div>
-        <div class="tokenomics-grid">
-          <div class="tokenomics-card">
-            <div class="tokenomics-value">1,000,000,000</div>
-            <div class="tokenomics-label">TOTAL SUPPLY</div>
-          </div>
-          <div class="tokenomics-card">
-            <div class="tokenomics-value green">0%</div>
-            <div class="tokenomics-label">BUY/SELL TAX</div>
-          </div>
-          <div class="tokenomics-card">
-            <div class="tokenomics-value fire">100%</div>
-            <div class="tokenomics-label">LP BURNED</div>
-          </div>
-          <div class="tokenomics-card">
-            <div class="tokenomics-value gold">RENOUNCED</div>
-            <div class="tokenomics-label">OWNERSHIP</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TOWER — Roadmap -->
-    <div class="panel" id="panel-tower">
-      <div class="panel-header">
-        <div class="panel-header-line"></div>
-        <h2>GANG TOWER</h2>
-        <button class="panel-close" data-close>✕</button>
-      </div>
-      <div class="panel-body">
-        <h3>ROADMAP</h3>
-        <p class="panel-desc">The blueprint. No shortcuts.</p>
-        <div class="panel-divider"></div>
-        <div class="roadmap">
-          <div class="roadmap-phase active">
-            <div class="phase-marker"></div>
-            <div class="phase-content">
-              <h4>PHASE 1 — THE COME UP</h4>
-              <ul>
-                <li>Token launch on Solana</li>
-                <li>Website + 3D city live</li>
-                <li>Community building (Twitter, Telegram)</li>
-                <li>CoinGecko / CMC listings</li>
-              </ul>
-            </div>
-          </div>
-          <div class="roadmap-phase">
-            <div class="phase-marker"></div>
-            <div class="phase-content">
-              <h4>PHASE 2 — THE GRIND</h4>
-              <ul>
-                <li>1,000 holders milestone</li>
-                <li>Influencer partnerships</li>
-                <li>Meme engine launch</li>
-                <li>CEX applications</li>
-              </ul>
-            </div>
-          </div>
-          <div class="roadmap-phase">
-            <div class="phase-marker"></div>
-            <div class="phase-content">
-              <h4>PHASE 3 — GANG SH*T</h4>
-              <ul>
-                <li>Merch store</li>
-                <li>NFT collection</li>
-                <li>Staking system</li>
-                <li>DAO governance</li>
-              </ul>
-            </div>
-          </div>
-          <div class="roadmap-phase">
-            <div class="phase-marker"></div>
-            <div class="phase-content">
-              <h4>PHASE 4 — TAKEOVER</h4>
-              <ul>
-                <li>Major CEX listing</li>
-                <li>Full game expansion</li>
-                <li>Cross-chain bridge</li>
-                <li>The moon</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ALLEY — Memes -->
-    <div class="panel" id="panel-alley">
-      <div class="panel-header">
-        <div class="panel-header-line"></div>
-        <h2>THE ALLEY</h2>
-        <button class="panel-close" data-close>✕</button>
-      </div>
-      <div class="panel-body">
-        <h3>MEME GALLERY</h3>
-        <p class="panel-desc">The culture lives here.</p>
-        <div class="panel-divider"></div>
-        <div class="meme-grid">
-          <div class="meme-slot"><span class="meme-num">#1</span><span class="meme-placeholder">COMING SOON</span></div>
-          <div class="meme-slot"><span class="meme-num">#2</span><span class="meme-placeholder">COMING SOON</span></div>
-          <div class="meme-slot"><span class="meme-num">#3</span><span class="meme-placeholder">COMING SOON</span></div>
-          <div class="meme-slot"><span class="meme-num">#4</span><span class="meme-placeholder">COMING SOON</span></div>
-          <div class="meme-slot"><span class="meme-num">#5</span><span class="meme-placeholder">COMING SOON</span></div>
-          <div class="meme-slot"><span class="meme-num">#6</span><span class="meme-placeholder">COMING SOON</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- GARAGE — Socials -->
-    <div class="panel" id="panel-garage">
-      <div class="panel-header">
-        <div class="panel-header-line"></div>
-        <h2>GANG GARAGE</h2>
-        <button class="panel-close" data-close>✕</button>
-      </div>
-      <div class="panel-body">
-        <h3>COMMUNITY</h3>
-        <p class="panel-desc">Roll with the crew.</p>
+        <h3>ROLL WITH THE CREW</h3>
+        <p class="panel-desc">Join the movement.</p>
         <div class="panel-divider"></div>
         <div class="socials-grid">
           <a href="#" class="social-card" target="_blank">

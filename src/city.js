@@ -1,43 +1,26 @@
 import * as THREE from 'three';
 import {
-  createBuildingMaterialSet,
   createAsphaltMaterial,
   createSidewalkMaterial,
-  createBrickMaterial,
 } from './assetLoader.js';
 import {
   createSignTexture,
-  createGraffitiTexture,
 } from './textures.js';
 
-// City layout constants
-const BLOCK_SIZE = 40;
+// Confined area constants
 const ROAD_WIDTH = 14;
+const ROAD_LENGTH = 100;
 const SIDEWALK_WIDTH = 3;
-const CELL_SIZE = BLOCK_SIZE + ROAD_WIDTH;
-const GRID_SIZE = 3;
-const CITY_HALF = (GRID_SIZE * CELL_SIZE) / 2;
-
-// SA-style warm building color palette
-const SA_COLORS = [
-  '#8a7a60', '#9a8a6a', '#b0a080', '#7a6a50', '#c0a878',
-  '#a09070', '#887060', '#706050', '#c4a880', '#947a5a',
-  '#b8a088', '#6a5a48', '#d0b890', '#8a7058', '#a09078',
-];
+const AREA_HALF_X = ROAD_LENGTH / 2 + 10;
+const AREA_HALF_Z = 40;
 
 // Vehicle colors (SA style)
 const CAR_COLORS = [
   '#2a4a2a', '#8a2020', '#1a1a4a', '#e8e0d0', '#3a3a3a',
   '#c8a030', '#404040', '#6a1a1a', '#2a2a6a', '#d0c0a0',
-  '#1a3a1a', '#4a2020', '#e0d0c0', '#606060', '#8a6a20',
 ];
 
-export const SPECIAL_BUILDINGS = [
-  { id: 'bank', name: 'GANG BANK', gridX: 1, gridZ: 0, color: '#e8a000', neonColor: '#e8a000', panel: 'panel-bank' },
-  { id: 'liquor', name: 'GANG LIQUOR', gridX: 0, gridZ: 1, color: '#c06020', neonColor: '#e07030', panel: 'panel-liquor' },
-  { id: 'tower', name: 'GANG TOWER', gridX: 2, gridZ: 2, color: '#8090a0', neonColor: '#a0b0c0', panel: 'panel-tower' },
-  { id: 'garage', name: 'GANG GARAGE', gridX: 2, gridZ: 0, color: '#508030', neonColor: '#70a040', panel: 'panel-garage' },
-];
+export const SPECIAL_BUILDINGS = [];
 
 export class City {
   constructor(scene) {
@@ -51,25 +34,28 @@ export class City {
 
   generate() {
     this._createGround();
-    this._createRoads();
-    this._createCrosswalks();
-    this._createBuildings();
+    this._createRoad();
+    this._createSidewalks();
+    this._createGasStation();
+    this._createParkingLot();
     this._createStreetLights();
-    this._createTrafficLights();
-    this._createVehicles();
     this._createPalmTrees();
     this._createProps();
-    this._createBranding();
+    this._createBoundaryFog();
     return {
       colliders: this.colliders,
       interactionZones: this.interactionZones,
+      // Export bounds for NPC system
+      bounds: { halfX: AREA_HALF_X, halfZ: AREA_HALF_Z, roadWidth: ROAD_WIDTH },
     };
   }
 
+  // ============ GROUND ============
   _createGround() {
-    const size = GRID_SIZE * CELL_SIZE + ROAD_WIDTH * 4;
-    const geo = new THREE.PlaneGeometry(size, size);
-    const mat = createSidewalkMaterial(Math.round(size / 6), Math.round(size / 6));
+    const sizeX = AREA_HALF_X * 2 + 20;
+    const sizeZ = AREA_HALF_Z * 2 + 20;
+    const geo = new THREE.PlaneGeometry(sizeX, sizeZ);
+    const mat = createSidewalkMaterial(Math.round(sizeX / 6), Math.round(sizeZ / 6));
     mat.color = new THREE.Color('#5a4a38');
     const ground = new THREE.Mesh(geo, mat);
     ground.rotation.x = -Math.PI / 2;
@@ -78,774 +64,365 @@ export class City {
     this.group.add(ground);
   }
 
-  _createRoads() {
-    for (let i = 0; i <= GRID_SIZE; i++) {
-      const pos = -CITY_HALF + i * CELL_SIZE;
-      this._addRoadStrip(pos, true);
-      this._addRoadStrip(pos, false);
-    }
-  }
+  // ============ SINGLE 2-LANE ROAD (along X-axis, centered at Z=0) ============
+  _createRoad() {
+    const length = ROAD_LENGTH + 40; // extend past visible area for fade effect
 
-  _addRoadStrip(linePos, horizontal) {
-    const length = GRID_SIZE * CELL_SIZE + ROAD_WIDTH * 2;
-    const repLong = Math.round(length / 8);
-
-    // Road — real asphalt PBR texture
-    const roadGeo = new THREE.PlaneGeometry(
-      horizontal ? length : ROAD_WIDTH,
-      horizontal ? ROAD_WIDTH : length
-    );
-    const roadMat = createAsphaltMaterial(
-      horizontal ? repLong : 2,
-      horizontal ? 2 : repLong
-    );
+    // Asphalt surface
+    const roadGeo = new THREE.PlaneGeometry(length, ROAD_WIDTH);
+    const roadMat = createAsphaltMaterial(Math.round(length / 8), 2);
     const road = new THREE.Mesh(roadGeo, roadMat);
     road.rotation.x = -Math.PI / 2;
-    road.position.set(horizontal ? 0 : linePos, 0.01, horizontal ? linePos : 0);
+    road.position.set(0, 0.01, 0);
     road.receiveShadow = true;
     this.group.add(road);
 
-    // Lane markings overlay (painted on road)
-    this._addLaneMarkings(linePos, horizontal, length);
+    // Center dashed yellow line (lane divider)
+    const dashLen = 4, gapLen = 6;
+    const markMat = new THREE.MeshBasicMaterial({ color: '#a09030' });
+    for (let d = -length / 2; d < length / 2; d += dashLen + gapLen) {
+      const dashGeo = new THREE.PlaneGeometry(dashLen, 0.15);
+      const dash = new THREE.Mesh(dashGeo, markMat);
+      dash.rotation.x = -Math.PI / 2;
+      dash.position.set(d + dashLen / 2, 0.04, 0);
+      this.group.add(dash);
+    }
 
-    // Curbs + sidewalks
+    // Edge lines (solid white)
+    const edgeMat = new THREE.MeshBasicMaterial({ color: '#808070' });
     for (const side of [-1, 1]) {
-      // Curb — real concrete
-      const curbGeo = new THREE.BoxGeometry(
-        horizontal ? length : 0.35,
-        0.22,
-        horizontal ? 0.35 : length
-      );
-      const curbMat = createSidewalkMaterial(1, Math.round(length / 4));
+      const edgeGeo = new THREE.PlaneGeometry(length, 0.1);
+      const edge = new THREE.Mesh(edgeGeo, edgeMat);
+      edge.rotation.x = -Math.PI / 2;
+      edge.position.set(0, 0.04, (ROAD_WIDTH / 2 - 0.5) * side);
+      this.group.add(edge);
+    }
+
+    // Curbs on both sides
+    const curbMat = createSidewalkMaterial(1, Math.round(length / 4));
+    for (const side of [-1, 1]) {
+      const curbGeo = new THREE.BoxGeometry(length, 0.22, 0.35);
       const curb = new THREE.Mesh(curbGeo, curbMat);
-      const curbOff = (ROAD_WIDTH / 2 + 0.17) * side;
-      curb.position.set(horizontal ? 0 : linePos + curbOff, 0.11, horizontal ? linePos + curbOff : 0);
+      curb.position.set(0, 0.11, (ROAD_WIDTH / 2 + 0.17) * side);
       curb.castShadow = true;
       this.group.add(curb);
+    }
+  }
 
-      // Sidewalk — real concrete PBR texture
-      const swGeo = new THREE.BoxGeometry(
-        horizontal ? length : SIDEWALK_WIDTH,
-        0.18,
-        horizontal ? SIDEWALK_WIDTH : length
-      );
-      const swMat = createSidewalkMaterial(
-        horizontal ? Math.round(length / 5) : 1,
-        horizontal ? 1 : Math.round(length / 5)
-      );
+  // ============ SIDEWALKS ============
+  _createSidewalks() {
+    const length = ROAD_LENGTH + 40;
+    const swMat = createSidewalkMaterial(Math.round(length / 5), 1);
+
+    for (const side of [-1, 1]) {
+      const swGeo = new THREE.BoxGeometry(length, 0.18, SIDEWALK_WIDTH);
       const sw = new THREE.Mesh(swGeo, swMat);
-      const swOff = (ROAD_WIDTH / 2 + 0.35 + SIDEWALK_WIDTH / 2) * side;
-      sw.position.set(horizontal ? 0 : linePos + swOff, 0.09, horizontal ? linePos + swOff : 0);
+      sw.position.set(0, 0.09, (ROAD_WIDTH / 2 + 0.35 + SIDEWALK_WIDTH / 2) * side);
       sw.receiveShadow = true;
       this.group.add(sw);
     }
   }
 
-  _createCrosswalks() {
-    const cwMat = new THREE.MeshBasicMaterial({ color: '#b0a890' });
-    const hGeo = new THREE.PlaneGeometry(ROAD_WIDTH * 0.7, 0.35);
-    const vGeo = new THREE.PlaneGeometry(0.35, ROAD_WIDTH * 0.7);
+  // ============ GAS STATION (south side of road, -Z) ============
+  _createGasStation() {
+    const stationX = -10;
+    const stationZ = -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 12);
+    const stationMat = new THREE.MeshStandardMaterial({ color: '#c8b898', roughness: 0.8 });
+    const roofMat = new THREE.MeshStandardMaterial({ color: '#8a2020', roughness: 0.6 });
+    const metalMat = new THREE.MeshStandardMaterial({ color: '#4a4a48', roughness: 0.5, metalness: 0.4 });
 
-    // Only add crosswalks at every other intersection to reduce mesh count
-    for (let i = 0; i <= GRID_SIZE; i += 2) {
-      for (let j = 0; j <= GRID_SIZE; j += 2) {
-        const ix = -CITY_HALF + i * CELL_SIZE;
-        const iz = -CITY_HALF + j * CELL_SIZE;
+    // Main building
+    const buildW = 12, buildH = 5, buildD = 8;
+    const buildGeo = new THREE.BoxGeometry(buildW, buildH, buildD);
+    const building = new THREE.Mesh(buildGeo, stationMat);
+    building.position.set(stationX, buildH / 2, stationZ - 6);
+    building.castShadow = true;
+    building.receiveShadow = true;
+    this.group.add(building);
+    this.colliders.push(new THREE.Box3().setFromObject(building));
 
-        for (let s = 0; s < 5; s++) {
-          const h = new THREE.Mesh(hGeo, cwMat);
-          h.rotation.x = -Math.PI / 2;
-          h.position.set(ix, 0.05, iz + ROAD_WIDTH / 2 + 1.5 + s * 0.7);
-          this.group.add(h);
+    // Flat roof overhang
+    const roofGeo = new THREE.BoxGeometry(buildW + 2, 0.3, buildD + 2);
+    const roof = new THREE.Mesh(roofGeo, roofMat);
+    roof.position.set(stationX, buildH + 0.15, stationZ - 6);
+    roof.castShadow = true;
+    this.group.add(roof);
 
-          const v = new THREE.Mesh(vGeo, cwMat);
-          v.rotation.x = -Math.PI / 2;
-          v.position.set(ix + ROAD_WIDTH / 2 + 1.5 + s * 0.7, 0.05, iz);
-          this.group.add(v);
-        }
-      }
-    }
-  }
-
-  _addLaneMarkings(linePos, horizontal, length) {
-    // Center dashed yellow line
-    const dashLen = 4;
-    const gapLen = 6;
-    const total = length;
-    const markMat = new THREE.MeshBasicMaterial({ color: '#a09030' });
-    const edgeMat = new THREE.MeshBasicMaterial({ color: '#808070' });
-
-    for (let d = -total / 2; d < total / 2; d += dashLen + gapLen) {
-      const dashGeo = new THREE.PlaneGeometry(
-        horizontal ? dashLen : 0.15,
-        horizontal ? 0.15 : dashLen
-      );
-      const dash = new THREE.Mesh(dashGeo, markMat);
-      dash.rotation.x = -Math.PI / 2;
-      dash.position.set(
-        horizontal ? d + dashLen / 2 : linePos,
-        0.04,
-        horizontal ? linePos : d + dashLen / 2
-      );
-      this.group.add(dash);
-    }
-
-    // Edge lines (solid white, faded)
-    for (const side of [-1, 1]) {
-      const edgeGeo = new THREE.PlaneGeometry(
-        horizontal ? total : 0.1,
-        horizontal ? 0.1 : total
-      );
-      const edge = new THREE.Mesh(edgeGeo, edgeMat);
-      edge.rotation.x = -Math.PI / 2;
-      const off = (ROAD_WIDTH / 2 - 0.5) * side;
-      edge.position.set(
-        horizontal ? 0 : linePos + off,
-        0.04,
-        horizontal ? linePos + off : 0
-      );
-      this.group.add(edge);
-    }
-  }
-
-  _createBuildings() {
-    const specialMap = {};
-    for (const sb of SPECIAL_BUILDINGS) {
-      specialMap[`${sb.gridX},${sb.gridZ}`] = sb;
-    }
-
-    for (let gx = 0; gx < GRID_SIZE; gx++) {
-      for (let gz = 0; gz < GRID_SIZE; gz++) {
-        const key = `${gx},${gz}`;
-        const special = specialMap[key];
-        const cx = -CITY_HALF + ROAD_WIDTH / 2 + SIDEWALK_WIDTH + gx * CELL_SIZE + BLOCK_SIZE / 2;
-        const cz = -CITY_HALF + ROAD_WIDTH / 2 + SIDEWALK_WIDTH + gz * CELL_SIZE + BLOCK_SIZE / 2;
-
-        if (special) {
-          this._createSpecialBuilding(cx, cz, special);
-        } else {
-          this._createRandomBuilding(cx, cz);
-        }
-      }
-    }
-  }
-
-  _createRandomBuilding(cx, cz) {
-    const subdivisions = Math.random() < 0.3 ? 1 : Math.random() < 0.5 ? 2 : 4;
-
-    if (subdivisions === 1) {
-      const w = BLOCK_SIZE * (0.7 + Math.random() * 0.25);
-      const d = BLOCK_SIZE * (0.7 + Math.random() * 0.25);
-      const h = 8 + Math.random() * 45;
-      this._addBuilding(cx, cz, w, d, h);
-    } else if (subdivisions === 2) {
-      const split = Math.random() < 0.5;
-      const half = BLOCK_SIZE / 2 - 1;
-      for (let i = 0; i < 2; i++) {
-        const ox = split ? (i - 0.5) * (half + 1) : 0;
-        const oz = split ? 0 : (i - 0.5) * (half + 1);
-        const w = split ? half : BLOCK_SIZE * 0.85;
-        const d = split ? BLOCK_SIZE * 0.85 : half;
-        const h = 6 + Math.random() * 35;
-        this._addBuilding(cx + ox, cz + oz, w, d, h);
-      }
-    } else {
-      const quarter = BLOCK_SIZE / 2 - 1;
-      for (let i = 0; i < 2; i++) {
-        for (let j = 0; j < 2; j++) {
-          const ox = (i - 0.5) * (quarter + 1);
-          const oz = (j - 0.5) * (quarter + 1);
-          const h = 5 + Math.random() * 25;
-          this._addBuilding(cx + ox, cz + oz, quarter, quarter, h);
-        }
-      }
-    }
-  }
-
-  _addBuilding(cx, cz, w, d, h, options = {}) {
-    const geo = new THREE.BoxGeometry(w, h, d);
-
-    // Real PBR materials with window overlays from assetLoader
-    const materials = createBuildingMaterialSet(w, h, d, {
-      shopColor: options.shopColor,
+    // Sign: "$GANG GAS"
+    const signTex = createSignTexture('$GANG GAS', 512, 128, {
+      textColor: '#e8a000', borderColor: '#e8a000',
+      bgColor: 'rgba(30, 20, 10, 0.9)', fontSize: 52,
     });
-
-    const mesh = new THREE.Mesh(geo, materials);
-    mesh.position.set(cx, h / 2, cz);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    this.group.add(mesh);
-
-    // 3D architectural details
-    this._addBuildingDetails(cx, cz, w, d, h);
-
-    // Rooftop details on taller buildings
-    if (h > 20 && Math.random() < 0.7) {
-      this._addRooftopDetails(cx, cz, w, d, h);
-    }
-
-    // Awning on short commercial buildings
-    if (h < 18 && Math.random() < 0.6) {
-      this._addAwning(cx, cz, w, d);
-    }
-
-    const box = new THREE.Box3().setFromObject(mesh);
-    this.colliders.push(box);
-    return mesh;
-  }
-
-  _addBuildingDetails(cx, cz, w, d, h) {
-    const detailMat = new THREE.MeshStandardMaterial({ color: '#6a5a48', roughness: 0.85 });
-    const darkMat = new THREE.MeshStandardMaterial({ color: '#3a3028', roughness: 0.9 });
-
-    // Foundation ledge at base
-    const baseGeo = new THREE.BoxGeometry(w + 0.3, 0.8, d + 0.3);
-    const base = new THREE.Mesh(baseGeo, detailMat);
-    base.position.set(cx, 0.4, cz);
-    base.castShadow = true;
-    this.group.add(base);
-
-    // Cornice at top (offset below roof to avoid z-fighting)
-    if (h > 8) {
-      const corniceGeo = new THREE.BoxGeometry(w + 0.4, 0.3, d + 0.4);
-      const cornice = new THREE.Mesh(corniceGeo, detailMat);
-      cornice.position.set(cx, h - 0.6, cz);
-      cornice.castShadow = true;
-      this.group.add(cornice);
-    }
-
-    // Floor separation ledges on taller buildings
-    if (h > 15) {
-      const numLedges = Math.min(Math.floor(h / 10), 4);
-      for (let i = 1; i <= numLedges; i++) {
-        const ly = (h / (numLedges + 1)) * i;
-        const ledgeGeo = new THREE.BoxGeometry(w + 0.15, 0.12, d + 0.15);
-        const ledge = new THREE.Mesh(ledgeGeo, detailMat);
-        ledge.position.set(cx, ly, cz);
-        this.group.add(ledge);
-      }
-    }
-
-    // Fire escape on one side (tall buildings)
-    if (h > 20 && Math.random() < 0.4) {
-      const escapeMat = new THREE.MeshStandardMaterial({ color: '#3a3a38', roughness: 0.7, metalness: 0.5 });
-      const escapeW = 2.5;
-      const side = Math.random() < 0.5 ? 1 : -1;
-      const floors = Math.floor(h / 4);
-
-      for (let f = 1; f < floors; f++) {
-        const fy = f * 4;
-        // Platform
-        const platGeo = new THREE.BoxGeometry(escapeW, 0.08, 1.2);
-        const plat = new THREE.Mesh(platGeo, escapeMat);
-        plat.position.set(cx + (w / 2 + 0.6) * side, fy, cz);
-        plat.castShadow = true;
-        this.group.add(plat);
-
-        // Railing
-        const railGeo = new THREE.BoxGeometry(escapeW, 0.8, 0.05);
-        const rail = new THREE.Mesh(railGeo, escapeMat);
-        rail.position.set(cx + (w / 2 + 1.15) * side, fy + 0.4, cz);
-        this.group.add(rail);
-
-        // Ladder between floors
-        if (f < floors - 1) {
-          const ladderGeo = new THREE.BoxGeometry(0.05, 3.5, 0.3);
-          const ladder = new THREE.Mesh(ladderGeo, escapeMat);
-          ladder.position.set(cx + (w / 2 + 0.3) * side, fy + 2, cz + 0.3);
-          this.group.add(ladder);
-        }
-      }
-    }
-  }
-
-  _addRooftopDetails(cx, cz, w, d, h) {
-    const detailMat = new THREE.MeshStandardMaterial({ color: '#4a4038', roughness: 0.9 });
-
-    // AC unit
-    if (Math.random() < 0.7) {
-      const acGeo = new THREE.BoxGeometry(2, 1.5, 2);
-      const ac = new THREE.Mesh(acGeo, detailMat);
-      ac.position.set(cx + (Math.random() - 0.5) * w * 0.5, h + 0.75, cz + (Math.random() - 0.5) * d * 0.5);
-      ac.castShadow = true;
-      this.group.add(ac);
-    }
-
-    // Water tank
-    if (h > 30 && Math.random() < 0.5) {
-      const tankMat = new THREE.MeshStandardMaterial({ color: '#6a5a4a', roughness: 0.8 });
-      const tankGeo = new THREE.CylinderGeometry(1.5, 1.5, 3, 8);
-      const tank = new THREE.Mesh(tankGeo, tankMat);
-      tank.position.set(cx + (Math.random() - 0.5) * w * 0.3, h + 1.5, cz + (Math.random() - 0.5) * d * 0.3);
-      tank.castShadow = true;
-      this.group.add(tank);
-
-      // Tank legs
-      for (let i = 0; i < 4; i++) {
-        const angle = (i / 4) * Math.PI * 2;
-        const legGeo = new THREE.CylinderGeometry(0.08, 0.08, 2, 4);
-        const leg = new THREE.Mesh(legGeo, detailMat);
-        leg.position.set(
-          cx + (Math.random() - 0.5) * w * 0.3 + Math.cos(angle) * 1,
-          h + 1,
-          cz + (Math.random() - 0.5) * d * 0.3 + Math.sin(angle) * 1
-        );
-        this.group.add(leg);
-      }
-    }
-  }
-
-  _addAwning(cx, cz, w, d) {
-    const colors = ['#8a2020', '#2a4a2a', '#c0a040', '#2a2a5a', '#806040'];
-    const awningColor = colors[Math.floor(Math.random() * colors.length)];
-    const awningGeo = new THREE.BoxGeometry(w * 0.7, 0.1, 2);
-    const awningMat = new THREE.MeshStandardMaterial({ color: awningColor, roughness: 0.7 });
-    const awning = new THREE.Mesh(awningGeo, awningMat);
-    awning.position.set(cx, 3.5, cz - d / 2 - 1);
-    awning.castShadow = true;
-    this.group.add(awning);
-  }
-
-  _createSpecialBuilding(cx, cz, spec) {
-    const heights = { bank: 30, liquor: 10, tower: 60, alley: 7, garage: 12 };
-    const h = heights[spec.id] || 18;
-    const w = spec.id === 'alley' ? BLOCK_SIZE * 0.5 : BLOCK_SIZE * 0.85;
-    const d = BLOCK_SIZE * 0.85;
-
-    this._addBuilding(cx, cz, w, d, h, {
-      litChance: 0.3,
-      hasShopFront: true,
-      shopColor: spec.color,
-      baseColor: spec.id === 'tower' ? '#606a70' : undefined,
-    });
-
-    // Sign on front
-    const signTex = createSignTexture(spec.name, 512, 128, {
-      textColor: spec.neonColor,
-      borderColor: spec.neonColor,
-      bgColor: 'rgba(30, 20, 10, 0.85)',
-      fontSize: spec.name.length > 10 ? 42 : 52,
-    });
-    const signGeo = new THREE.PlaneGeometry(w * 0.75, w * 0.18);
+    const signGeo = new THREE.PlaneGeometry(8, 2);
     const signMat = new THREE.MeshBasicMaterial({ map: signTex, transparent: true });
-    // Place signs facing outward on all 4 faces (default PlaneGeometry faces +Z)
-    const signData = [
-      { pos: [cx, h * 0.7, cz - d / 2 - 0.15], rot: Math.PI },    // front (-Z): flip to face outward
-      { pos: [cx, h * 0.7, cz + d / 2 + 0.15], rot: 0 },          // back (+Z): default facing
-      { pos: [cx - w / 2 - 0.15, h * 0.7, cz], rot: -Math.PI / 2 }, // left (-X): face outward
-      { pos: [cx + w / 2 + 0.15, h * 0.7, cz], rot: Math.PI / 2 },  // right (+X): face outward
+    const sign = new THREE.Mesh(signGeo, signMat);
+    sign.position.set(stationX, buildH + 1.5, stationZ - 6 + buildD / 2 + 0.1);
+    this.group.add(sign);
+
+    // Neon glow
+    const neon = new THREE.PointLight('#e8a000', 3, 25);
+    neon.position.set(stationX, buildH, stationZ - 2);
+    this.group.add(neon);
+
+    // Gas pump canopy (open-air roof over pump island)
+    const canopyW = 16, canopyD = 8, canopyH = 4.5;
+    const canopyGeo = new THREE.BoxGeometry(canopyW, 0.25, canopyD);
+    const canopy = new THREE.Mesh(canopyGeo, roofMat);
+    canopy.position.set(stationX, canopyH, stationZ);
+    canopy.castShadow = true;
+    this.group.add(canopy);
+
+    // Canopy support pillars (4 corners)
+    const pillarGeo = new THREE.CylinderGeometry(0.2, 0.2, canopyH, 8);
+    const pillars = [
+      [stationX - canopyW / 2 + 1, stationZ - canopyD / 2 + 1],
+      [stationX + canopyW / 2 - 1, stationZ - canopyD / 2 + 1],
+      [stationX - canopyW / 2 + 1, stationZ + canopyD / 2 - 1],
+      [stationX + canopyW / 2 - 1, stationZ + canopyD / 2 - 1],
     ];
-    for (let si = 0; si < signData.length; si++) {
-      const sd = signData[si];
-      const s = new THREE.Mesh(signGeo, signMat);
-      s.position.set(...sd.pos);
-      s.rotation.y = sd.rot;
-      this.group.add(s);
+    for (const [px, pz] of pillars) {
+      const pillar = new THREE.Mesh(pillarGeo, metalMat);
+      pillar.position.set(px, canopyH / 2, pz);
+      pillar.castShadow = true;
+      this.group.add(pillar);
     }
 
-    // Single neon glow light per building (front face only)
-    const neonLight = new THREE.PointLight(spec.neonColor, 2.5, 20);
-    neonLight.position.set(cx, h * 0.5, cz - d / 2 - 2);
-    this.group.add(neonLight);
+    // Canopy lights (underneath)
+    for (const side of [-1, 1]) {
+      const light = new THREE.PointLight('#ffe8c0', 1.5, 15);
+      light.position.set(stationX + side * 5, canopyH - 0.5, stationZ);
+      this.group.add(light);
+    }
 
-    // Interaction zone — all around the building, generous size
-    const zoneSize = 10;
-    const zone = new THREE.Box3(
-      new THREE.Vector3(cx - w / 2 - zoneSize, 0, cz - d / 2 - zoneSize),
-      new THREE.Vector3(cx + w / 2 + zoneSize, 5, cz + d / 2 + zoneSize)
-    );
+    // Gas pumps (3 pump islands)
+    const pumpMat = new THREE.MeshStandardMaterial({ color: '#d0d0d0', roughness: 0.5 });
+    const pumpBaseMat = new THREE.MeshStandardMaterial({ color: '#3a3a38', roughness: 0.7 });
+    for (let i = -1; i <= 1; i++) {
+      const px = stationX + i * 5;
+      const pz = stationZ;
 
-    this.interactionZones.push({
-      id: spec.id,
-      name: spec.name,
-      panel: spec.panel,
-      zone,
-      position: new THREE.Vector3(cx, 0, cz),
-      color: spec.neonColor,
-    });
+      // Pump base
+      const baseGeo = new THREE.BoxGeometry(0.8, 0.3, 1.5);
+      const base = new THREE.Mesh(baseGeo, pumpBaseMat);
+      base.position.set(px, 0.15, pz);
+      this.group.add(base);
+
+      // Pump body
+      const pumpGeo = new THREE.BoxGeometry(0.6, 1.5, 0.5);
+      const pump = new THREE.Mesh(pumpGeo, pumpMat);
+      pump.position.set(px, 1.05, pz);
+      pump.castShadow = true;
+      this.group.add(pump);
+
+      // Pump screen (dark)
+      const screenGeo = new THREE.PlaneGeometry(0.4, 0.3);
+      const screenMat = new THREE.MeshBasicMaterial({ color: '#1a3a1a' });
+      const screen = new THREE.Mesh(screenGeo, screenMat);
+      screen.position.set(px, 1.4, pz + 0.26);
+      this.group.add(screen);
+
+      // Hose
+      const hoseGeo = new THREE.CylinderGeometry(0.03, 0.03, 1.2, 6);
+      const hoseMat = new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.9 });
+      const hose = new THREE.Mesh(hoseGeo, hoseMat);
+      hose.position.set(px + 0.35, 0.9, pz);
+      hose.rotation.z = 0.4;
+      this.group.add(hose);
+
+      // Collider for pump
+      this.colliders.push(new THREE.Box3(
+        new THREE.Vector3(px - 0.5, 0, pz - 0.8),
+        new THREE.Vector3(px + 0.5, 2, pz + 0.8)
+      ));
+    }
+
+    // Concrete pad under pumps
+    const padGeo = new THREE.BoxGeometry(canopyW, 0.12, canopyD);
+    const padMat = createSidewalkMaterial(3, 1);
+    const pad = new THREE.Mesh(padGeo, padMat);
+    pad.position.set(stationX, 0.06, stationZ);
+    pad.receiveShadow = true;
+    this.group.add(pad);
   }
 
+  // ============ PARKING LOT (north side of road, +Z) ============
+  _createParkingLot() {
+    const lotX = 5;
+    const lotZ = ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 8;
+    const lotW = 30, lotD = 14;
+
+    // Asphalt surface
+    const lotGeo = new THREE.PlaneGeometry(lotW, lotD);
+    const lotMat = createAsphaltMaterial(4, 2);
+    const lot = new THREE.Mesh(lotGeo, lotMat);
+    lot.rotation.x = -Math.PI / 2;
+    lot.position.set(lotX, 0.02, lotZ);
+    lot.receiveShadow = true;
+    this.group.add(lot);
+
+    // Parking lines
+    const lineMat = new THREE.MeshBasicMaterial({ color: '#b0a890' });
+    const numSpots = 8;
+    const spotW = lotW / numSpots;
+    for (let i = 0; i <= numSpots; i++) {
+      const lx = lotX - lotW / 2 + i * spotW;
+      const lineGeo = new THREE.PlaneGeometry(0.1, lotD * 0.6);
+      const line = new THREE.Mesh(lineGeo, lineMat);
+      line.rotation.x = -Math.PI / 2;
+      line.position.set(lx, 0.05, lotZ);
+      this.group.add(line);
+    }
+
+    // A few parked cars in the lot
+    const bodyMat = new THREE.MeshStandardMaterial({ roughness: 0.4, metalness: 0.6 });
+    const tireMat = new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.9 });
+    const windshieldMat = new THREE.MeshStandardMaterial({
+      color: '#4a6a8a', roughness: 0.1, metalness: 0.8, transparent: true, opacity: 0.6,
+    });
+
+    const parkedSlots = [0, 2, 3, 5, 7]; // which slots have cars
+    for (const slot of parkedSlots) {
+      const cx = lotX - lotW / 2 + (slot + 0.5) * spotW;
+      const cz = lotZ;
+      const color = CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)];
+      this._addParkedCar(cx, cz, Math.PI / 2 + (Math.random() - 0.5) * 0.1, color, bodyMat, tireMat, windshieldMat);
+    }
+
+    // Low concrete barrier around lot edges (back and sides)
+    const barrierMat = new THREE.MeshStandardMaterial({ color: '#808078', roughness: 0.8 });
+    // Back wall
+    const backGeo = new THREE.BoxGeometry(lotW + 1, 0.6, 0.4);
+    const back = new THREE.Mesh(backGeo, barrierMat);
+    back.position.set(lotX, 0.3, lotZ + lotD / 2);
+    back.castShadow = true;
+    this.group.add(back);
+    this.colliders.push(new THREE.Box3().setFromObject(back));
+
+    // Side walls
+    for (const side of [-1, 1]) {
+      const sideGeo = new THREE.BoxGeometry(0.4, 0.6, lotD);
+      const sw = new THREE.Mesh(sideGeo, barrierMat);
+      sw.position.set(lotX + (lotW / 2 + 0.2) * side, 0.3, lotZ);
+      sw.castShadow = true;
+      this.group.add(sw);
+      this.colliders.push(new THREE.Box3().setFromObject(sw));
+    }
+  }
+
+  // Simplified parked car (sedan only)
+  _addParkedCar(x, z, rotation, color, bodyMat, tireMat, windshieldMat) {
+    const carGroup = new THREE.Group();
+    const bMat = bodyMat.clone();
+    bMat.color = new THREE.Color(color);
+
+    // Body
+    const chassisGeo = new THREE.BoxGeometry(4.2, 0.5, 1.85);
+    const chassis = new THREE.Mesh(chassisGeo, bMat);
+    chassis.position.y = 0.45;
+    chassis.castShadow = true;
+    carGroup.add(chassis);
+
+    const upperGeo = new THREE.BoxGeometry(3.8, 0.4, 1.8);
+    const upper = new THREE.Mesh(upperGeo, bMat);
+    upper.position.y = 0.9;
+    carGroup.add(upper);
+
+    // Cabin
+    const cabinGeo = new THREE.BoxGeometry(1.8, 0.75, 1.7);
+    const cabin = new THREE.Mesh(cabinGeo, bMat);
+    cabin.position.set(-0.1, 1.5, 0);
+    cabin.castShadow = true;
+    carGroup.add(cabin);
+
+    // Windows
+    const glassMat = windshieldMat;
+    const winGeo = new THREE.BoxGeometry(1.6, 0.5, 1.65);
+    const win = new THREE.Mesh(winGeo, glassMat);
+    win.position.set(-0.1, 1.5, 0);
+    carGroup.add(win);
+
+    // Wheels
+    const wheelGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.22, 10);
+    const wheelPos = [[1.3, 0.35, 0.93], [1.3, 0.35, -0.93], [-1.3, 0.35, 0.93], [-1.3, 0.35, -0.93]];
+    for (const [wx, wy, wz] of wheelPos) {
+      const wheel = new THREE.Mesh(wheelGeo, tireMat);
+      wheel.position.set(wx, wy, wz);
+      wheel.rotation.x = Math.PI / 2;
+      carGroup.add(wheel);
+    }
+
+    // Headlights / taillights
+    const hlGeo = new THREE.BoxGeometry(0.06, 0.12, 0.25);
+    const hlMat = new THREE.MeshBasicMaterial({ color: '#ffe8b0' });
+    const tlMat = new THREE.MeshBasicMaterial({ color: '#cc2020' });
+    for (const s of [-0.65, 0.65]) {
+      const hl = new THREE.Mesh(hlGeo, hlMat);
+      hl.position.set(2.1, 0.6, s);
+      carGroup.add(hl);
+      const tl = new THREE.Mesh(hlGeo, tlMat);
+      tl.position.set(-2.1, 0.6, s);
+      carGroup.add(tl);
+    }
+
+    carGroup.position.set(x, 0, z);
+    carGroup.rotation.y = rotation;
+    this.group.add(carGroup);
+    this.colliders.push(new THREE.Box3().setFromObject(carGroup));
+  }
+
+  // ============ STREET LIGHTS ============
   _createStreetLights() {
     const lampColor = '#e8a050';
     const poleMat = new THREE.MeshStandardMaterial({ color: '#4a4a48', roughness: 0.6, metalness: 0.4 });
 
-    for (let i = 0; i <= GRID_SIZE; i++) {
-      const linePos = -CITY_HALF + i * CELL_SIZE;
-      for (let j = 0; j < GRID_SIZE; j++) {
-        const blockCenter = -CITY_HALF + ROAD_WIDTH / 2 + SIDEWALK_WIDTH + j * CELL_SIZE + BLOCK_SIZE / 2;
-        this._addStreetLight(blockCenter, linePos - ROAD_WIDTH / 2 - 1.5, lampColor, poleMat);
-        this._addStreetLight(linePos - ROAD_WIDTH / 2 - 1.5, blockCenter, lampColor, poleMat);
+    // Lights along the road at intervals
+    for (let x = -ROAD_LENGTH / 2; x <= ROAD_LENGTH / 2; x += 20) {
+      for (const side of [-1, 1]) {
+        this._addStreetLight(x, (ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 1) * side, lampColor, poleMat);
       }
     }
   }
 
   _addStreetLight(x, z, color, poleMat) {
     const h = 7;
-
-    // Pole
     const poleGeo = new THREE.CylinderGeometry(0.06, 0.1, h, 6);
     const pole = new THREE.Mesh(poleGeo, poleMat);
     pole.position.set(x, h / 2, z);
     this.group.add(pole);
 
-    // Curved arm
+    const armDir = z > 0 ? -1 : 1; // arm points toward road
     const armGeo = new THREE.BoxGeometry(2.5, 0.06, 0.06);
     const arm = new THREE.Mesh(armGeo, poleMat);
-    arm.position.set(x + 1.25, h, z);
+    arm.position.set(x, h, z + 1.25 * armDir);
     this.group.add(arm);
 
-    // Fixture
     const fixGeo = new THREE.BoxGeometry(0.8, 0.15, 0.4);
     const fixMat = new THREE.MeshStandardMaterial({ color: '#d0c0a0', roughness: 0.5, emissive: color, emissiveIntensity: 0.3 });
     const fix = new THREE.Mesh(fixGeo, fixMat);
-    fix.position.set(x + 2.5, h - 0.15, z);
+    fix.position.set(x, h - 0.15, z + 2.5 * armDir);
     this.group.add(fix);
 
-    // Light
     const light = new THREE.PointLight(color, 2, 18);
-    light.position.set(x + 2.5, h - 0.4, z);
+    light.position.set(x, h - 0.4, z + 2.5 * armDir);
     this.group.add(light);
   }
 
-  _createTrafficLights() {
-    const tlMat = new THREE.MeshStandardMaterial({ color: '#3a3a38', roughness: 0.7, metalness: 0.3 });
-
-    // Place at intersections
-    for (let i = 0; i <= GRID_SIZE; i++) {
-      for (let j = 0; j <= GRID_SIZE; j++) {
-        if (Math.random() < 0.4) continue; // Skip some for variety
-        const ix = -CITY_HALF + i * CELL_SIZE;
-        const iz = -CITY_HALF + j * CELL_SIZE;
-
-        // One traffic light per corner
-        const corner = Math.floor(Math.random() * 4);
-        const offsets = [
-          [ROAD_WIDTH / 2 + 1, ROAD_WIDTH / 2 + 1],
-          [-ROAD_WIDTH / 2 - 1, ROAD_WIDTH / 2 + 1],
-          [ROAD_WIDTH / 2 + 1, -ROAD_WIDTH / 2 - 1],
-          [-ROAD_WIDTH / 2 - 1, -ROAD_WIDTH / 2 - 1],
-        ];
-        const [ox, oz] = offsets[corner];
-
-        // Pole
-        const poleGeo = new THREE.CylinderGeometry(0.06, 0.08, 4, 6);
-        const pole = new THREE.Mesh(poleGeo, tlMat);
-        pole.position.set(ix + ox, 2, iz + oz);
-        this.group.add(pole);
-
-        // Light housing
-        const housingGeo = new THREE.BoxGeometry(0.4, 1.2, 0.4);
-        const housing = new THREE.Mesh(housingGeo, tlMat);
-        housing.position.set(ix + ox, 4.6, iz + oz);
-        this.group.add(housing);
-
-        // Colored lights (red/yellow/green)
-        const lightColors = ['#cc2020', '#ccaa20', '#20aa20'];
-        const lightPositions = [5.0, 4.6, 4.2];
-        const activeLight = Math.floor(Math.random() * 3);
-        for (let k = 0; k < 3; k++) {
-          const lGeo = new THREE.SphereGeometry(0.08, 8, 8);
-          const lMat = new THREE.MeshBasicMaterial({
-            color: k === activeLight ? lightColors[k] : '#1a1a1a',
-          });
-          const l = new THREE.Mesh(lGeo, lMat);
-          l.position.set(ix + ox, lightPositions[k], iz + oz - 0.21);
-          this.group.add(l);
-        }
-      }
-    }
-  }
-
-  _createVehicles() {
-    // Park cars along roads
-    const bodyMat = new THREE.MeshStandardMaterial({ roughness: 0.4, metalness: 0.6 });
-    const tireMat = new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.9 });
-    const windshieldMat = new THREE.MeshStandardMaterial({
-      color: '#4a6a8a',
-      roughness: 0.1,
-      metalness: 0.8,
-      transparent: true,
-      opacity: 0.6,
-    });
-
-    for (let i = 0; i <= GRID_SIZE; i++) {
-      const linePos = -CITY_HALF + i * CELL_SIZE;
-
-      for (let j = 0; j < GRID_SIZE; j++) {
-        const blockStart = -CITY_HALF + ROAD_WIDTH / 2 + SIDEWALK_WIDTH + j * CELL_SIZE;
-
-        // Park 0-2 cars along each road segment
-        const numCars = Math.floor(Math.random() * 3);
-        for (let c = 0; c < numCars; c++) {
-          const along = blockStart + 5 + Math.random() * (BLOCK_SIZE - 10);
-          const carColor = CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)];
-          const horizontal = Math.random() < 0.5;
-
-          if (horizontal) {
-            this._addCar(along, linePos + ROAD_WIDTH / 2 - 2.5, 0, carColor, bodyMat, tireMat, windshieldMat);
-          } else {
-            this._addCar(linePos + ROAD_WIDTH / 2 - 2.5, along, Math.PI / 2, carColor, bodyMat, tireMat, windshieldMat);
-          }
-        }
-      }
-    }
-  }
-
-  _addCar(x, z, rotation, color, bodyMat, tireMat, windshieldMat) {
-    const carGroup = new THREE.Group();
-    const isPickup = Math.random() < 0.25;
-    const bMat = bodyMat.clone();
-    bMat.color = new THREE.Color(color);
-
-    const chromeMat = new THREE.MeshStandardMaterial({ color: '#c0c0c0', roughness: 0.1, metalness: 0.9 });
-    const trimMat = new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.6 });
-
-    if (isPickup) {
-      // === PICKUP TRUCK ===
-      // Hood/engine
-      const hoodGeo = new THREE.BoxGeometry(1.8, 0.9, 1.9);
-      const hood = new THREE.Mesh(hoodGeo, bMat);
-      hood.position.set(1.3, 0.75, 0);
-      hood.castShadow = true;
-      carGroup.add(hood);
-
-      // Cabin
-      const cabGeo = new THREE.BoxGeometry(1.6, 1.1, 1.9);
-      const cab = new THREE.Mesh(cabGeo, bMat);
-      cab.position.set(-0.1, 1.0, 0);
-      cab.castShadow = true;
-      carGroup.add(cab);
-
-      // Cabin roof
-      const roofGeo = new THREE.BoxGeometry(1.4, 0.12, 1.85);
-      const roof = new THREE.Mesh(roofGeo, bMat);
-      roof.position.set(-0.1, 1.6, 0);
-      carGroup.add(roof);
-
-      // Bed
-      const bedFloorGeo = new THREE.BoxGeometry(2.2, 0.15, 1.8);
-      const bedFloor = new THREE.Mesh(bedFloorGeo, trimMat);
-      bedFloor.position.set(-1.8, 0.55, 0);
-      carGroup.add(bedFloor);
-
-      // Bed walls
-      for (const s of [-1, 1]) {
-        const wallGeo = new THREE.BoxGeometry(2.2, 0.5, 0.08);
-        const wall = new THREE.Mesh(wallGeo, bMat);
-        wall.position.set(-1.8, 0.85, 0.9 * s);
-        wall.castShadow = true;
-        carGroup.add(wall);
-      }
-      // Tailgate
-      const tgGeo = new THREE.BoxGeometry(0.08, 0.5, 1.8);
-      const tg = new THREE.Mesh(tgGeo, bMat);
-      tg.position.set(-2.9, 0.85, 0);
-      carGroup.add(tg);
-
-      // Windshield
-      const wsGeo = new THREE.PlaneGeometry(1.7, 0.9);
-      const ws = new THREE.Mesh(wsGeo, windshieldMat);
-      ws.position.set(0.65, 1.25, 0);
-      ws.rotation.y = -Math.PI / 2;
-      ws.rotation.z = -0.15;
-      carGroup.add(ws);
-
-      // Bumpers
-      const fbGeo = new THREE.BoxGeometry(0.15, 0.25, 2.0);
-      const fb = new THREE.Mesh(fbGeo, chromeMat);
-      fb.position.set(2.25, 0.4, 0);
-      carGroup.add(fb);
-      const rb = fb.clone();
-      rb.position.set(-3.0, 0.4, 0);
-      carGroup.add(rb);
-
-    } else {
-      // === SEDAN ===
-      // Lower body (chassis + fenders)
-      const chassisGeo = new THREE.BoxGeometry(4.4, 0.5, 1.85);
-      const chassis = new THREE.Mesh(chassisGeo, bMat);
-      chassis.position.set(0, 0.45, 0);
-      chassis.castShadow = true;
-      carGroup.add(chassis);
-
-      // Upper body (hood, trunk)
-      const upperGeo = new THREE.BoxGeometry(4.0, 0.45, 1.8);
-      const upper = new THREE.Mesh(upperGeo, bMat);
-      upper.position.set(0, 0.9, 0);
-      upper.castShadow = true;
-      carGroup.add(upper);
-
-      // Hood slope
-      const hoodGeo = new THREE.BoxGeometry(1.0, 0.15, 1.75);
-      const hoodMesh = new THREE.Mesh(hoodGeo, bMat);
-      hoodMesh.position.set(1.7, 1.0, 0);
-      hoodMesh.rotation.z = 0.1;
-      carGroup.add(hoodMesh);
-
-      // Cabin
-      const cabinGeo = new THREE.BoxGeometry(2.0, 0.85, 1.7);
-      const cabin = new THREE.Mesh(cabinGeo, bMat);
-      cabin.position.set(-0.1, 1.55, 0);
-      cabin.castShadow = true;
-      carGroup.add(cabin);
-
-      // Roof
-      const roofGeo = new THREE.BoxGeometry(1.8, 0.08, 1.72);
-      const roof = new THREE.Mesh(roofGeo, bMat);
-      roof.position.set(-0.1, 2.0, 0);
-      carGroup.add(roof);
-
-      // Trunk slope
-      const trunkGeo = new THREE.BoxGeometry(0.8, 0.15, 1.75);
-      const trunkMesh = new THREE.Mesh(trunkGeo, bMat);
-      trunkMesh.position.set(-1.5, 1.05, 0);
-      trunkMesh.rotation.z = -0.08;
-      carGroup.add(trunkMesh);
-
-      // Windshield (angled)
-      const wsGeo = new THREE.PlaneGeometry(1.6, 0.8);
-      const ws = new THREE.Mesh(wsGeo, windshieldMat);
-      ws.position.set(0.85, 1.55, 0);
-      ws.rotation.y = -Math.PI / 2;
-      ws.rotation.z = -0.25;
-      carGroup.add(ws);
-
-      // Rear window
-      const rwGeo = new THREE.PlaneGeometry(1.5, 0.65);
-      const rw = new THREE.Mesh(rwGeo, windshieldMat);
-      rw.position.set(-1.1, 1.5, 0);
-      rw.rotation.y = Math.PI / 2;
-      rw.rotation.z = 0.2;
-      carGroup.add(rw);
-
-      // Side windows
-      for (const s of [-1, 1]) {
-        const swGeo = new THREE.PlaneGeometry(1.6, 0.5);
-        const sw = new THREE.Mesh(swGeo, windshieldMat);
-        sw.position.set(-0.1, 1.55, 0.86 * s);
-        sw.rotation.y = Math.PI / 2 * s;
-        carGroup.add(sw);
-      }
-
-      // Front bumper with chrome
-      const fbGeo = new THREE.BoxGeometry(0.12, 0.2, 1.9);
-      const fb = new THREE.Mesh(fbGeo, chromeMat);
-      fb.position.set(2.25, 0.35, 0);
-      carGroup.add(fb);
-
-      // Rear bumper
-      const rbGeo = new THREE.BoxGeometry(0.12, 0.2, 1.9);
-      const rb = new THREE.Mesh(rbGeo, chromeMat);
-      rb.position.set(-2.25, 0.35, 0);
-      carGroup.add(rb);
-
-      // Door line trim
-      const doorGeo = new THREE.BoxGeometry(3.8, 0.04, 0.02);
-      for (const s of [-1, 1]) {
-        const door = new THREE.Mesh(doorGeo, trimMat);
-        door.position.set(0, 0.85, 0.92 * s);
-        carGroup.add(door);
-      }
-    }
-
-    // === WHEELS (shared) ===
-    const wheelR = isPickup ? 0.4 : 0.35;
-    const wheelW = 0.22;
-    const wheelGeo = new THREE.CylinderGeometry(wheelR, wheelR, wheelW, 12);
-    const hubGeo = new THREE.CylinderGeometry(wheelR * 0.5, wheelR * 0.5, wheelW + 0.02, 8);
-    const hubMat = new THREE.MeshStandardMaterial({ color: '#808080', roughness: 0.3, metalness: 0.7 });
-
-    const fwb = isPickup ? 1.3 : 1.3;
-    const rwb = isPickup ? -2.0 : -1.3;
-    const wz = isPickup ? 0.95 : 0.93;
-    const wy = wheelR;
-
-    const wheelPositions = [[fwb, wy, wz], [fwb, wy, -wz], [rwb, wy, wz], [rwb, wy, -wz]];
-    for (const [wx, wyy, wzz] of wheelPositions) {
-      const wheel = new THREE.Mesh(wheelGeo, tireMat);
-      wheel.position.set(wx, wyy, wzz);
-      wheel.rotation.x = Math.PI / 2;
-      wheel.castShadow = true;
-      carGroup.add(wheel);
-
-      // Hub cap
-      const hub = new THREE.Mesh(hubGeo, hubMat);
-      hub.position.set(wx, wyy, wzz);
-      hub.rotation.x = Math.PI / 2;
-      carGroup.add(hub);
-    }
-
-    // Wheel arches (dark cutouts)
-    const archMat = new THREE.MeshStandardMaterial({ color: '#0a0a0a', roughness: 0.95 });
-    for (const [wx, wyy, wzz] of wheelPositions) {
-      const archGeo = new THREE.BoxGeometry(wheelR * 2.2, wheelR * 1.2, 0.08);
-      const arch = new THREE.Mesh(archGeo, archMat);
-      arch.position.set(wx, wyy + wheelR * 0.2, wzz > 0 ? wzz - 0.05 : wzz + 0.05);
-      carGroup.add(arch);
-    }
-
-    // Headlights
-    const hlMat = new THREE.MeshBasicMaterial({ color: '#ffe8b0' });
-    const hlGeo = new THREE.BoxGeometry(0.06, 0.12, 0.25);
-    const hlX = isPickup ? 2.2 : 2.2;
-    for (const side of [-0.65, 0.65]) {
-      const hl = new THREE.Mesh(hlGeo, hlMat);
-      hl.position.set(hlX, 0.65, side);
-      carGroup.add(hl);
-    }
-
-    // Taillights
-    const tlMat2 = new THREE.MeshBasicMaterial({ color: '#cc2020' });
-    const tlX = isPickup ? -2.95 : -2.2;
-    for (const side of [-0.65, 0.65]) {
-      const tl = new THREE.Mesh(hlGeo, tlMat2);
-      tl.position.set(tlX, 0.65, side);
-      carGroup.add(tl);
-    }
-
-    // License plate (rear)
-    const plateMat = new THREE.MeshStandardMaterial({ color: '#e0d8c0', roughness: 0.5 });
-    const plateGeo = new THREE.BoxGeometry(0.04, 0.15, 0.5);
-    const plate = new THREE.Mesh(plateGeo, plateMat);
-    plate.position.set(isPickup ? -3.0 : -2.22, 0.45, 0);
-    carGroup.add(plate);
-
-    // Side mirrors
-    const mirrorGeo = new THREE.BoxGeometry(0.15, 0.1, 0.08);
-    for (const s of [-1, 1]) {
-      const mirror = new THREE.Mesh(mirrorGeo, trimMat);
-      mirror.position.set(0.7, 1.3, (isPickup ? 1.0 : 0.95) * s);
-      carGroup.add(mirror);
-    }
-
-    carGroup.position.set(x, 0, z);
-    carGroup.rotation.y = rotation;
-    this.group.add(carGroup);
-
-    const carBox = new THREE.Box3().setFromObject(carGroup);
-    this.colliders.push(carBox);
-  }
-
+  // ============ PALM TREES ============
   _createPalmTrees() {
     const trunkMat = new THREE.MeshStandardMaterial({ color: '#5a4a30', roughness: 0.9 });
     const leafMat = new THREE.MeshStandardMaterial({ color: '#3a6a2a', roughness: 0.7, side: THREE.DoubleSide });
 
-    // Place along sidewalks
-    for (let i = 0; i <= GRID_SIZE; i++) {
-      const linePos = -CITY_HALF + i * CELL_SIZE;
-      for (let j = 0; j < GRID_SIZE; j++) {
-        if (Math.random() < 0.4) continue;
-        const blockStart = -CITY_HALF + ROAD_WIDTH / 2 + SIDEWALK_WIDTH + j * CELL_SIZE;
-        const along = blockStart + 3 + Math.random() * (BLOCK_SIZE - 6);
-        const side = Math.random() < 0.5 ? 1 : -1;
-        const treeX = linePos + (ROAD_WIDTH / 2 + 1.5) * side;
-
-        if (Math.random() < 0.5) {
-          this._addPalmTree(along, treeX, trunkMat, leafMat);
-        } else {
-          this._addPalmTree(treeX, along, trunkMat, leafMat);
-        }
-      }
+    // A few along the sidewalks
+    const positions = [
+      [-35, -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 2)],
+      [-15, (ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 2)],
+      [20, -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 2)],
+      [35, (ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 2)],
+      [-5, (ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 25)],
+      [25, -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 20)],
+    ];
+    for (const [tx, tz] of positions) {
+      this._addPalmTree(tx, tz, trunkMat, leafMat);
     }
   }
 
@@ -854,7 +431,6 @@ export class City {
     const height = 8 + Math.random() * 5;
     const lean = (Math.random() - 0.5) * 0.15;
 
-    // Trunk — slightly curved (segments)
     const segments = 5;
     for (let i = 0; i < segments; i++) {
       const t = i / segments;
@@ -868,14 +444,12 @@ export class City {
       treeGroup.add(seg);
     }
 
-    // Palm fronds (leaf fans)
     const topX = lean * height;
     const numFronds = 6 + Math.floor(Math.random() * 3);
     for (let i = 0; i < numFronds; i++) {
       const angle = (i / numFronds) * Math.PI * 2 + Math.random() * 0.3;
       const frondLen = 3 + Math.random() * 2;
       const droop = 0.3 + Math.random() * 0.4;
-
       const frondGeo = new THREE.PlaneGeometry(frondLen, 0.8);
       const frond = new THREE.Mesh(frondGeo, leafMat);
       frond.position.set(
@@ -892,132 +466,98 @@ export class City {
     this.group.add(treeGroup);
   }
 
+  // ============ PROPS ============
   _createProps() {
     const propMat = new THREE.MeshStandardMaterial({ color: '#3a3830', roughness: 0.85, metalness: 0.2 });
 
-    // Dumpsters (green, SA-style)
+    // Dumpster behind gas station
     const dumpsterMat = new THREE.MeshStandardMaterial({ color: '#2a4a2a', roughness: 0.8 });
-    for (let i = 0; i < 15; i++) {
-      const gx = Math.floor(Math.random() * GRID_SIZE);
-      const gz = Math.floor(Math.random() * GRID_SIZE);
-      const cx = -CITY_HALF + ROAD_WIDTH / 2 + SIDEWALK_WIDTH + gx * CELL_SIZE + BLOCK_SIZE / 2;
-      const cz = -CITY_HALF + ROAD_WIDTH / 2 + SIDEWALK_WIDTH + gz * CELL_SIZE;
+    const dGeo = new THREE.BoxGeometry(2, 1.2, 1.2);
+    const dumpster = new THREE.Mesh(dGeo, dumpsterMat);
+    dumpster.position.set(-16, 0.6, -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 18));
+    dumpster.castShadow = true;
+    this.group.add(dumpster);
+    this.colliders.push(new THREE.Box3().setFromObject(dumpster));
 
-      const dGeo = new THREE.BoxGeometry(2, 1.2, 1.2);
-      const dumpster = new THREE.Mesh(dGeo, dumpsterMat);
-      dumpster.position.set(cx + (Math.random() - 0.5) * BLOCK_SIZE * 0.3, 0.6, cz - 1);
-      dumpster.castShadow = true;
-      this.group.add(dumpster);
-
-      const dBox = new THREE.Box3().setFromObject(dumpster);
-      this.colliders.push(dBox);
-    }
-
-    // Fire hydrants
+    // Fire hydrant
     const hydrantMat = new THREE.MeshStandardMaterial({ color: '#c04020', roughness: 0.6 });
-    for (let i = 0; i < 15; i++) {
-      const gx = Math.floor(Math.random() * GRID_SIZE);
-      const gz = Math.floor(Math.random() * GRID_SIZE);
-      const lineX = -CITY_HALF + gx * CELL_SIZE;
-      const lineZ = -CITY_HALF + gz * CELL_SIZE;
-
-      const hGeo = new THREE.CylinderGeometry(0.12, 0.18, 0.6, 6);
+    const hGeo = new THREE.CylinderGeometry(0.12, 0.18, 0.6, 6);
+    for (const [hx, hz] of [[15, ROAD_WIDTH / 2 + 1.5], [-25, -(ROAD_WIDTH / 2 + 1.5)]]) {
       const hydrant = new THREE.Mesh(hGeo, hydrantMat);
-      hydrant.position.set(lineX + ROAD_WIDTH / 2 + 1.5, 0.3, lineZ + ROAD_WIDTH / 2 + 1.5);
+      hydrant.position.set(hx, 0.3, hz);
       hydrant.castShadow = true;
       this.group.add(hydrant);
     }
 
-    // Trash cans
-    for (let i = 0; i < 25; i++) {
-      const gx = Math.floor(Math.random() * GRID_SIZE);
-      const gz = Math.floor(Math.random() * GRID_SIZE);
-      const cx = -CITY_HALF + ROAD_WIDTH / 2 + SIDEWALK_WIDTH + gx * CELL_SIZE;
-      const cz = -CITY_HALF + ROAD_WIDTH / 2 + SIDEWALK_WIDTH + gz * CELL_SIZE;
-
+    // Trash cans along sidewalk
+    for (const [tx, tz] of [[-30, ROAD_WIDTH / 2 + 2], [10, -(ROAD_WIDTH / 2 + 2)], [30, ROAD_WIDTH / 2 + 2]]) {
       const tGeo = new THREE.CylinderGeometry(0.25, 0.3, 0.7, 8);
       const trash = new THREE.Mesh(tGeo, propMat);
-      trash.position.set(cx + Math.random() * 3, 0.35, cz + Math.random() * 3);
+      trash.position.set(tx, 0.35, tz);
       trash.castShadow = true;
       this.group.add(trash);
     }
 
-    // Phone booths (a couple)
-    const boothMat = new THREE.MeshStandardMaterial({ color: '#6a6a6a', roughness: 0.7 });
-    for (let i = 0; i < 4; i++) {
-      const gx = Math.floor(Math.random() * GRID_SIZE);
-      const gz = Math.floor(Math.random() * GRID_SIZE);
-      const lineX = -CITY_HALF + gx * CELL_SIZE + ROAD_WIDTH / 2 + 2;
-      const lineZ = -CITY_HALF + gz * CELL_SIZE + ROAD_WIDTH / 2 + 2;
-
-      const bGeo = new THREE.BoxGeometry(0.8, 2.2, 0.8);
-      const booth = new THREE.Mesh(bGeo, boothMat);
-      booth.position.set(lineX, 1.1, lineZ);
-      booth.castShadow = true;
-      this.group.add(booth);
-    }
-  }
-
-  _createBranding() {
-    const graffitiTexts = ['$GANG', 'GRIND', 'NEVER GIVE UP', 'GANG SHIT', 'WE UP', 'GROVE ST'];
-
-    for (let i = 0; i < 10; i++) {
-      const gx = Math.floor(Math.random() * GRID_SIZE);
-      const gz = Math.floor(Math.random() * GRID_SIZE);
-      const cx = -CITY_HALF + ROAD_WIDTH / 2 + SIDEWALK_WIDTH + gx * CELL_SIZE + BLOCK_SIZE / 2;
-      const cz = -CITY_HALF + ROAD_WIDTH / 2 + SIDEWALK_WIDTH + gz * CELL_SIZE + BLOCK_SIZE / 2;
-      const text = graffitiTexts[i % graffitiTexts.length];
-
-      const tex = createGraffitiTexture(text);
-      const geo = new THREE.PlaneGeometry(7, 3.5);
-      const mat = new THREE.MeshBasicMaterial({
-        map: tex,
-        transparent: true,
-        side: THREE.DoubleSide,
-        depthWrite: false,
-      });
-      const graffiti = new THREE.Mesh(geo, mat);
-      const wallSide = Math.floor(Math.random() * 4);
-      const offset = BLOCK_SIZE / 2 * 0.42 + 0.15;
-      const height = 2 + Math.random() * 4;
-
-      if (wallSide === 0) graffiti.position.set(cx, height, cz - offset);
-      else if (wallSide === 1) { graffiti.position.set(cx + offset, height, cz); graffiti.rotation.y = -Math.PI / 2; }
-      else if (wallSide === 2) { graffiti.position.set(cx, height, cz + offset); graffiti.rotation.y = Math.PI; }
-      else { graffiti.position.set(cx - offset, height, cz); graffiti.rotation.y = Math.PI / 2; }
-
-      this.group.add(graffiti);
-    }
-
-    // Billboard
+    // Billboard near gas station
     const bbTex = createSignTexture('$GANG — GRIND AND NEVER GIVE-UP', 1024, 256, {
       bgColor: 'rgba(30, 20, 10, 0.9)',
       textColor: '#e8a000',
       fontSize: 56,
       borderColor: '#e8a000',
     });
-    const bbGeo = new THREE.PlaneGeometry(14, 3.5);
+    const bbGeo = new THREE.PlaneGeometry(12, 3);
     const bbMat = new THREE.MeshBasicMaterial({ map: bbTex, transparent: true, side: THREE.DoubleSide });
     const billboard = new THREE.Mesh(bbGeo, bbMat);
-    const towerSpec = SPECIAL_BUILDINGS.find(b => b.id === 'tower');
-    const tcx = -CITY_HALF + ROAD_WIDTH / 2 + SIDEWALK_WIDTH + towerSpec.gridX * CELL_SIZE + BLOCK_SIZE / 2;
-    const tcz = -CITY_HALF + ROAD_WIDTH / 2 + SIDEWALK_WIDTH + towerSpec.gridZ * CELL_SIZE + BLOCK_SIZE / 2;
-    billboard.position.set(tcx, 65, tcz - BLOCK_SIZE / 2 * 0.43);
+    billboard.position.set(-10, 10, -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 24));
     this.group.add(billboard);
+
+    // Billboard pole
+    const bbPoleMat = new THREE.MeshStandardMaterial({ color: '#4a4a48', roughness: 0.6, metalness: 0.4 });
+    const bbPoleGeo = new THREE.CylinderGeometry(0.15, 0.2, 10, 6);
+    const bbPole = new THREE.Mesh(bbPoleGeo, bbPoleMat);
+    bbPole.position.set(-10, 5, -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 24));
+    this.group.add(bbPole);
+  }
+
+  // ============ BOUNDARY FOG ============
+  _createBoundaryFog() {
+    // Add scene fog for natural fade at edges
+    this.scene.fog = new THREE.Fog('#1a1510', AREA_HALF_X * 0.6, AREA_HALF_X * 1.1);
+
+    // Invisible boundary walls to prevent player from walking off
+    const wallMat = new THREE.MeshBasicMaterial({ visible: false });
+    const wallH = 10;
+
+    // Left/Right walls (along Z axis)
+    for (const side of [-1, 1]) {
+      const wallGeo = new THREE.BoxGeometry(1, wallH, AREA_HALF_Z * 2);
+      const wall = new THREE.Mesh(wallGeo, wallMat);
+      wall.position.set(AREA_HALF_X * side, wallH / 2, 0);
+      this.group.add(wall);
+      this.colliders.push(new THREE.Box3().setFromObject(wall));
+    }
+
+    // Front/Back walls (along X axis)
+    for (const side of [-1, 1]) {
+      const wallGeo = new THREE.BoxGeometry(AREA_HALF_X * 2, wallH, 1);
+      const wall = new THREE.Mesh(wallGeo, wallMat);
+      wall.position.set(0, wallH / 2, AREA_HALF_Z * side);
+      this.group.add(wall);
+      this.colliders.push(new THREE.Box3().setFromObject(wall));
+    }
   }
 
   getSpawnPosition() {
-    return new THREE.Vector3(0, 1, 0);
+    // Spawn player on the sidewalk near the gas station
+    return new THREE.Vector3(0, 0.2, -(ROAD_WIDTH / 2 + 2));
   }
 
   getMinimapData() {
     return {
-      gridSize: GRID_SIZE,
-      cellSize: CELL_SIZE,
-      blockSize: BLOCK_SIZE,
+      areaHalfX: AREA_HALF_X,
+      areaHalfZ: AREA_HALF_Z,
       roadWidth: ROAD_WIDTH,
-      cityHalf: CITY_HALF,
-      specialBuildings: SPECIAL_BUILDINGS,
+      roadLength: ROAD_LENGTH,
     };
   }
 }

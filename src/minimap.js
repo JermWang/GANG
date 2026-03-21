@@ -6,9 +6,7 @@ export class Minimap {
     this.ctx = this.canvas.getContext('2d');
     this.cityData = cityData;
     this.size = 200;
-
-    // How many world-units the radar shows in each direction from player
-    this.radarRange = 80;
+    this.radarRange = 50;
   }
 
   update(playerPos, playerYaw, interactionZones) {
@@ -17,75 +15,49 @@ export class Minimap {
     const half = size / 2;
     const range = this.radarRange;
     const scale = half / range;
+    const rw = this.cityData.roadWidth || 14;
 
     // Clear with GTA radar background
     ctx.fillStyle = '#1a2a18';
     ctx.fillRect(0, 0, size, size);
-
-    // Add subtle green tint overlay (SA radar style)
     ctx.fillStyle = 'rgba(30, 50, 25, 0.5)';
     ctx.fillRect(0, 0, size, size);
 
     ctx.save();
-    // Center on player, rotate so player always faces up
     ctx.translate(half, half);
     ctx.rotate(playerYaw);
 
-    // Draw roads relative to player
+    // Draw the single road (horizontal along X, at Z=0)
+    const roadZ = (0 - playerPos.z) * scale;
     ctx.strokeStyle = 'rgba(80, 100, 70, 0.7)';
-    for (let i = 0; i <= this.cityData.gridSize; i++) {
-      const linePos = -this.cityData.cityHalf + i * this.cityData.cellSize;
+    ctx.lineWidth = rw * scale;
+    ctx.beginPath();
+    ctx.moveTo(-half * 3, roadZ);
+    ctx.lineTo(half * 3, roadZ);
+    ctx.stroke();
 
-      // Horizontal road
-      const hz = (linePos - playerPos.z) * scale;
-      ctx.lineWidth = this.cityData.roadWidth * scale;
-      ctx.beginPath();
-      ctx.moveTo(-half * 2, hz);
-      ctx.lineTo(half * 2, hz);
-      ctx.stroke();
-
-      // Vertical road
-      const hx = (linePos - playerPos.x) * scale;
-      ctx.beginPath();
-      ctx.moveTo(hx, -half * 2);
-      ctx.lineTo(hx, half * 2);
-      ctx.stroke();
+    // Gas station blip (south side)
+    const gsX = (-10 - playerPos.x) * scale;
+    const gsZ = (-(rw / 2 + 15) - playerPos.z) * scale;
+    if (Math.abs(gsX) < half && Math.abs(gsZ) < half) {
+      ctx.fillStyle = '#e8a000';
+      ctx.fillRect(gsX - 6, gsZ - 4, 12, 8);
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(gsX - 6, gsZ - 4, 12, 8);
     }
 
-    // Draw building blocks
-    ctx.fillStyle = 'rgba(40, 55, 35, 0.8)';
-    for (let gx = 0; gx < this.cityData.gridSize; gx++) {
-      for (let gz = 0; gz < this.cityData.gridSize; gz++) {
-        const cx = -this.cityData.cityHalf + this.cityData.roadWidth / 2 + 3 + gx * this.cityData.cellSize;
-        const cz = -this.cityData.cityHalf + this.cityData.roadWidth / 2 + 3 + gz * this.cityData.cellSize;
-        const rx = (cx - playerPos.x) * scale;
-        const rz = (cz - playerPos.z) * scale;
-        const bw = this.cityData.blockSize * scale;
-        ctx.fillRect(rx, rz, bw, bw);
-      }
-    }
-
-    // Draw special building blips
-    if (interactionZones) {
-      for (const zone of interactionZones) {
-        const zx = (zone.position.x - playerPos.x) * scale;
-        const zz = (zone.position.z - playerPos.z) * scale;
-
-        // Only draw if within radar range
-        if (Math.abs(zx) < half && Math.abs(zz) < half) {
-          // Square blip (GTA style)
-          ctx.fillStyle = zone.color || '#e8a000';
-          ctx.fillRect(zx - 4, zz - 4, 8, 8);
-          ctx.strokeStyle = '#000';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(zx - 4, zz - 4, 8, 8);
-        }
-      }
+    // Parking lot blip (north side)
+    const plX = (5 - playerPos.x) * scale;
+    const plZ = ((rw / 2 + 8) - playerPos.z) * scale;
+    if (Math.abs(plX) < half && Math.abs(plZ) < half) {
+      ctx.fillStyle = 'rgba(60, 80, 55, 0.8)';
+      ctx.fillRect(plX - 8, plZ - 4, 16, 8);
     }
 
     ctx.restore();
 
-    // Player blip (always center, always pointing up) — white triangle
+    // Player blip — white triangle always center
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.moveTo(half, half - 6);
@@ -101,13 +73,10 @@ export class Minimap {
     ctx.save();
     ctx.translate(half, half);
     ctx.rotate(playerYaw);
-    // N is at negative Z in world space
-    const nx = 0;
-    const nz = -half + 12;
     ctx.fillStyle = '#c0c0c0';
     ctx.font = 'bold 10px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('N', nx, nz + 4);
+    ctx.fillText('N', 0, -half + 16);
     ctx.restore();
 
     // Radar edge darkening

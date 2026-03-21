@@ -24,12 +24,13 @@ export class NPCSystem {
   constructor(scene, cityData) {
     this.scene = scene;
     this.cityData = cityData;
+    this.bounds = cityData.bounds || { halfX: 60, halfZ: 40, roadWidth: 14 };
     this.pedestrians = [];
     this.trafficCars = [];
     this.group = new THREE.Group();
     this.group.name = 'npcs';
     scene.add(this.group);
-    this._cachedModels = []; // loaded GLTF data per model type
+    this._cachedModels = [];
     this._modelsLoaded = false;
   }
 
@@ -49,38 +50,38 @@ export class NPCSystem {
     console.log(`Loaded ${this._cachedModels.length} civilian models`);
   }
 
-  initialize(roadPositions, sidewalkPositions) {
+  initialize() {
     // Spawn pedestrians on sidewalks
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 8; i++) {
       this._spawnPedestrian();
     }
 
-    // Spawn traffic cars on roads
-    for (let i = 0; i < 8; i++) {
-      this._spawnTrafficCar();
+    // Spawn traffic cars on road (both directions)
+    for (let i = 0; i < 4; i++) {
+      this._spawnTrafficCar(i % 2 === 0 ? 1 : -1);
     }
+  }
+
+  _getRandomSidewalkPos() {
+    const rw = this.bounds.roadWidth;
+    const side = Math.random() < 0.5 ? -1 : 1;
+    const swZ = (rw / 2 + 2) * side;
+    const x = (Math.random() - 0.5) * this.bounds.halfX * 1.6;
+    return { x, z: swZ, side };
   }
 
   _spawnPedestrian() {
     const ped = this._createPedestrianMesh();
-    
-    // Random position on sidewalk area
-    const range = 70;
-    ped.position.set(
-      (Math.random() - 0.5) * range,
-      0,
-      (Math.random() - 0.5) * range
-    );
+    const pos = this._getRandomSidewalkPos();
+    ped.position.set(pos.x, 0, pos.z);
 
-    // Random walk direction
-    ped.userData.direction = new THREE.Vector3(
-      Math.random() - 0.5,
-      0,
-      Math.random() - 0.5
-    ).normalize();
+    // Walk along X axis (along the sidewalk)
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    ped.userData.direction = new THREE.Vector3(dir, 0, 0);
     ped.userData.speed = 1.5 + Math.random() * 1.5;
     ped.userData.walkTimer = 0;
-    ped.userData.turnTimer = 3 + Math.random() * 5;
+    ped.userData.turnTimer = 5 + Math.random() * 8;
+    ped.userData.sidewalkSide = pos.side;
 
     this.group.add(ped);
     this.pedestrians.push(ped);
@@ -136,37 +137,25 @@ export class NPCSystem {
     return group;
   }
 
-  _spawnTrafficCar() {
+  _spawnTrafficCar(laneDir) {
     const car = this._createTrafficCarMesh();
+    const rw = this.bounds.roadWidth;
     
-    // Random position on road
-    const range = 60;
-    const roadOffset = 3; // Offset from center of road
+    // Lane offset: +Z lane goes right (+X), -Z lane goes left (-X)
+    const laneZ = (rw / 4) * laneDir; // offset from center
+    const startX = -this.bounds.halfX * (laneDir > 0 ? 1 : -1);
     
-    // Pick a random road lane
-    const isHorizontal = Math.random() < 0.5;
-    if (isHorizontal) {
-      car.position.set(
-        (Math.random() - 0.5) * range,
-        0.4,
-        Math.floor(Math.random() * 3 - 1) * 54 + (Math.random() < 0.5 ? roadOffset : -roadOffset)
-      );
-      car.rotation.y = Math.random() < 0.5 ? 0 : Math.PI;
-    } else {
-      car.position.set(
-        Math.floor(Math.random() * 3 - 1) * 54 + (Math.random() < 0.5 ? roadOffset : -roadOffset),
-        0.4,
-        (Math.random() - 0.5) * range
-      );
-      car.rotation.y = Math.random() < 0.5 ? Math.PI / 2 : -Math.PI / 2;
-    }
-
-    car.userData.speed = 8 + Math.random() * 6;
-    car.userData.direction = new THREE.Vector3(
-      Math.sin(car.rotation.y),
-      0,
-      Math.cos(car.rotation.y)
+    car.position.set(
+      startX + (Math.random() - 0.5) * this.bounds.halfX,
+      0.4,
+      laneZ
     );
+    
+    // Face driving direction
+    car.rotation.y = laneDir > 0 ? -Math.PI / 2 : Math.PI / 2;
+    car.userData.speed = 8 + Math.random() * 6;
+    car.userData.laneDir = laneDir;
+    car.userData.direction = new THREE.Vector3(laneDir, 0, 0);
 
     this.group.add(car);
     this.trafficCars.push(car);
@@ -237,82 +226,87 @@ export class NPCSystem {
   }
 
   update(dt) {
-    const bounds = 80;
+    const halfX = this.bounds.halfX;
+    const rw = this.bounds.roadWidth;
+    const fadeStart = halfX * 0.7;
 
     // Update pedestrians
     for (const ped of this.pedestrians) {
-      // Update animation mixer
-      if (ped.userData.mixer) {
-        ped.userData.mixer.update(dt);
-      }
+      if (ped.userData.mixer) ped.userData.mixer.update(dt);
 
       // Handle dead NPCs
       if (ped.userData.dead) {
         ped.userData.deathTimer -= dt;
-        // Sink into ground slowly after death anim plays
-        if (ped.userData.deathTimer < 3) {
-          if (ped.position.y > -0.5) {
-            ped.position.y -= dt * 0.3;
-          }
+        if (ped.userData.deathTimer < 3 && ped.position.y > -0.5) {
+          ped.position.y -= dt * 0.3;
         }
-        // Respawn after timer
         if (ped.userData.deathTimer <= 0) {
           ped.userData.dead = false;
           ped.rotation.x = 0;
           ped.rotation.z = 0;
-          ped.position.y = 0;
-          ped.position.x = (Math.random() - 0.5) * 70;
-          ped.position.z = (Math.random() - 0.5) * 70;
+          const pos = this._getRandomSidewalkPos();
+          ped.position.set(pos.x, 0, pos.z);
           ped.userData.speed = 1.5 + Math.random() * 1.5;
-          ped.userData.direction.set(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
+          const dir = Math.random() < 0.5 ? 1 : -1;
+          ped.userData.direction.set(dir, 0, 0);
+          ped.userData.sidewalkSide = pos.side;
 
-          // Switch back to Walk animation
           if (ped.userData.actions) {
-            const walkAction = ped.userData.actions.get('Walk') || ped.userData.actions.get('Idle');
-            if (walkAction) {
-              ped.userData.currentAction = playAnimation(ped.userData.actions, 'Walk', ped.userData.currentAction, 0.3);
-            }
+            ped.userData.currentAction = playAnimation(ped.userData.actions, 'Walk', ped.userData.currentAction, 0.3);
           }
         }
         continue;
       }
 
-      // Move forward
+      // Move along sidewalk
       ped.position.x += ped.userData.direction.x * ped.userData.speed * dt;
-      ped.position.z += ped.userData.direction.z * ped.userData.speed * dt;
-
-      // Face direction
       ped.rotation.y = Math.atan2(ped.userData.direction.x, ped.userData.direction.z);
 
-      // Random turns
-      ped.userData.turnTimer -= dt;
-      if (ped.userData.turnTimer <= 0) {
-        ped.userData.direction.set(
-          Math.random() - 0.5,
-          0,
-          Math.random() - 0.5
-        ).normalize();
-        ped.userData.turnTimer = 3 + Math.random() * 5;
+      // Wrap at edges — teleport to opposite side
+      if (ped.position.x > halfX) {
+        ped.position.x = -halfX;
+      } else if (ped.position.x < -halfX) {
+        ped.position.x = halfX;
       }
 
-      // Wrap around bounds
-      if (ped.position.x > bounds) ped.position.x = -bounds;
-      if (ped.position.x < -bounds) ped.position.x = bounds;
-      if (ped.position.z > bounds) ped.position.z = -bounds;
-      if (ped.position.z < -bounds) ped.position.z = bounds;
+      // Fade opacity near boundaries
+      const dist = Math.abs(ped.position.x);
+      const opacity = dist > fadeStart ? 1 - (dist - fadeStart) / (halfX - fadeStart) : 1;
+      ped.traverse(child => {
+        if (child.isMesh && child.material) {
+          child.material.transparent = true;
+          child.material.opacity = Math.max(0, opacity);
+        }
+      });
+
+      // Occasional direction flip
+      ped.userData.turnTimer -= dt;
+      if (ped.userData.turnTimer <= 0) {
+        ped.userData.direction.x *= -1;
+        ped.userData.turnTimer = 8 + Math.random() * 10;
+      }
     }
 
     // Update traffic cars
     for (const car of this.trafficCars) {
-      // Move forward
       car.position.x += car.userData.direction.x * car.userData.speed * dt;
-      car.position.z += car.userData.direction.z * car.userData.speed * dt;
 
-      // Wrap around bounds
-      if (car.position.x > bounds) car.position.x = -bounds;
-      if (car.position.x < -bounds) car.position.x = bounds;
-      if (car.position.z > bounds) car.position.z = -bounds;
-      if (car.position.z < -bounds) car.position.z = bounds;
+      // Wrap at edges
+      if (car.position.x > halfX + 10) {
+        car.position.x = -halfX - 10;
+      } else if (car.position.x < -halfX - 10) {
+        car.position.x = halfX + 10;
+      }
+
+      // Fade near boundaries
+      const dist = Math.abs(car.position.x);
+      const opacity = dist > fadeStart ? 1 - (dist - fadeStart) / (halfX + 10 - fadeStart) : 1;
+      car.traverse(child => {
+        if (child.isMesh && child.material) {
+          child.material.transparent = true;
+          child.material.opacity = Math.max(0, opacity);
+        }
+      });
     }
   }
 
