@@ -14,7 +14,7 @@ export const GTAShader = {
     saturation: { value: 1.15 },
     brightness: { value: 1.2 },
     // Film grain
-    grainIntensity: { value: 0.06 },
+    grainIntensity: { value: 0.02 },
     // Vignette
     vignetteIntensity: { value: 0.25 },
     vignetteRadius: { value: 0.9 },

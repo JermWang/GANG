@@ -242,17 +242,22 @@ export class GunSystem {
       if (rightHandBone) {
         // Attach to animated right hand bone
         const handPos = new THREE.Vector3();
+        const handQuat = new THREE.Quaternion();
         rightHandBone.getWorldPosition(handPos);
+        rightHandBone.getWorldQuaternion(handQuat);
         this.gunGroup.position.copy(handPos);
-        this.gunGroup.rotation.set(0, playerYaw, 0);
+        this.gunGroup.quaternion.copy(handQuat);
+        // Fine-tune offset: push gun forward and slightly down in hand space
+        const offset = new THREE.Vector3(0, 0.05, -0.1).applyQuaternion(handQuat);
+        this.gunGroup.position.add(offset);
       } else if (this.playerMesh) {
-        // Fallback: offset from player position
+        // Fallback: offset from player position at right side
         const sinY = Math.sin(playerYaw);
         const cosY = Math.cos(playerYaw);
         this.gunGroup.position.set(
-          playerPos.x + cosY * 0.4 - sinY * 0.3,
+          playerPos.x + cosY * 0.3 - sinY * 0.25,
           playerPos.y + 0.85,
-          playerPos.z - sinY * 0.4 - cosY * 0.3
+          playerPos.z - sinY * 0.3 - cosY * 0.25
         );
         this.gunGroup.rotation.set(0, playerYaw, 0);
       }

@@ -6,7 +6,7 @@ const SPRINT_SPEED = 16;
 const PLAYER_RADIUS = 0.5;
 const PLAYER_HEIGHT = 1.8;
 const GRAVITY = -25;
-const GROUND_Y = 0.15; // Sidewalk height
+const GROUND_Y = 0.01; // Road surface level
 
 export class Player {
   constructor(scene) {
@@ -321,10 +321,8 @@ export class Player {
 
     this.mesh.position.copy(newPos);
 
-    // Rotate mesh to face movement direction
-    if (isMoving) {
-      this.mesh.rotation.y = this.yaw;
-    }
+    // Always rotate mesh to face aim direction (3rd person shooter)
+    this.mesh.rotation.y = this.yaw;
   }
 
   getPosition() {

@@ -145,7 +145,7 @@ export class NPCSystem {
     const laneZ = (rw / 4) * laneDir;
     const x = startX !== undefined ? startX : (Math.random() - 0.5) * this.bounds.halfX;
     
-    car.position.set(x, 0.4, laneZ);
+    car.position.set(x, 0.18, laneZ);
     
     // Face driving direction: +Z is model forward
     // laneDir=1 drives +X, so rotate -90° around Y
