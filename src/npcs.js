@@ -56,9 +56,14 @@ export class NPCSystem {
       this._spawnPedestrian();
     }
 
-    // Spawn traffic cars on road (both directions)
-    for (let i = 0; i < 4; i++) {
-      this._spawnTrafficCar(i % 2 === 0 ? 1 : -1);
+    // Spawn traffic cars on road — evenly spaced, both directions
+    const carsPerLane = 3;
+    const spacing = (this.bounds.halfX * 1.6) / carsPerLane;
+    for (let lane of [1, -1]) {
+      for (let i = 0; i < carsPerLane; i++) {
+        const x = -this.bounds.halfX * 0.8 + i * spacing + (Math.random() - 0.5) * 5;
+        this._spawnTrafficCar(lane, x);
+      }
     }
   }
 
@@ -137,23 +142,22 @@ export class NPCSystem {
     return group;
   }
 
-  _spawnTrafficCar(laneDir) {
+  _spawnTrafficCar(laneDir, startX) {
     const car = this._createTrafficCarMesh();
     const rw = this.bounds.roadWidth;
     
-    // Lane offset: +Z lane goes right (+X), -Z lane goes left (-X)
-    const laneZ = (rw / 4) * laneDir; // offset from center
-    const startX = -this.bounds.halfX * (laneDir > 0 ? 1 : -1);
+    // Lane offset: positive lane = +Z side, negative lane = -Z side
+    const laneZ = (rw / 4) * laneDir;
+    const x = startX !== undefined ? startX : (Math.random() - 0.5) * this.bounds.halfX;
     
-    car.position.set(
-      startX + (Math.random() - 0.5) * this.bounds.halfX,
-      0.4,
-      laneZ
-    );
+    car.position.set(x, 0.4, laneZ);
     
-    // Face driving direction
+    // Face driving direction: +Z is model forward
+    // laneDir=1 drives +X, so rotate -90° around Y
+    // laneDir=-1 drives -X, so rotate +90° around Y
     car.rotation.y = laneDir > 0 ? -Math.PI / 2 : Math.PI / 2;
-    car.userData.speed = 8 + Math.random() * 6;
+    car.userData.baseSpeed = 8 + Math.random() * 4;
+    car.userData.speed = car.userData.baseSpeed;
     car.userData.laneDir = laneDir;
     car.userData.direction = new THREE.Vector3(laneDir, 0, 0);
 
@@ -287,20 +291,46 @@ export class NPCSystem {
       }
     }
 
-    // Update traffic cars
-    for (const car of this.trafficCars) {
-      car.position.x += car.userData.direction.x * car.userData.speed * dt;
+    // Update traffic cars with spatial awareness
+    for (let i = 0; i < this.trafficCars.length; i++) {
+      const car = this.trafficCars[i];
+      const dir = car.userData.laneDir;
+      let targetSpeed = car.userData.baseSpeed;
 
-      // Wrap at edges
-      if (car.position.x > halfX + 10) {
-        car.position.x = -halfX - 10;
-      } else if (car.position.x < -halfX - 10) {
-        car.position.x = halfX + 10;
+      // Check distance to car ahead in same lane
+      const minFollowDist = 12;
+      for (let j = 0; j < this.trafficCars.length; j++) {
+        if (i === j) continue;
+        const other = this.trafficCars[j];
+        if (other.userData.laneDir !== dir) continue; // different lane
+        
+        // "ahead" means in the driving direction
+        const dx = (other.position.x - car.position.x) * dir;
+        if (dx > 0 && dx < minFollowDist) {
+          // Slow down proportionally — closer = slower
+          const ratio = dx / minFollowDist;
+          targetSpeed = Math.min(targetSpeed, other.userData.speed * ratio);
+        }
+      }
+
+      // Smoothly adjust speed
+      car.userData.speed += (targetSpeed - car.userData.speed) * Math.min(dt * 3, 1);
+      car.userData.speed = Math.max(car.userData.speed, 0);
+
+      car.position.x += dir * car.userData.speed * dt;
+
+      // Wrap at edges — respawn with gap check
+      if (car.position.x > halfX + 15) {
+        car.position.x = -halfX - 12;
+        car.userData.speed = car.userData.baseSpeed;
+      } else if (car.position.x < -halfX - 15) {
+        car.position.x = halfX + 12;
+        car.userData.speed = car.userData.baseSpeed;
       }
 
       // Fade near boundaries
       const dist = Math.abs(car.position.x);
-      const opacity = dist > fadeStart ? 1 - (dist - fadeStart) / (halfX + 10 - fadeStart) : 1;
+      const opacity = dist > fadeStart ? 1 - (dist - fadeStart) / (halfX + 15 - fadeStart) : 1;
       car.traverse(child => {
         if (child.isMesh && child.material) {
           child.material.transparent = true;
