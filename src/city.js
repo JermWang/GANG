@@ -428,36 +428,69 @@ export class City {
 
   _addPalmTree(x, z, trunkMat, leafMat) {
     const treeGroup = new THREE.Group();
-    const height = 8 + Math.random() * 5;
-    const lean = (Math.random() - 0.5) * 0.15;
+    const height = 8 + Math.random() * 4;
+    const leanX = (Math.random() - 0.5) * 2;
+    const leanZ = (Math.random() - 0.5) * 2;
 
-    const segments = 5;
-    for (let i = 0; i < segments; i++) {
-      const t = i / segments;
-      const segH = height / segments;
-      const radius = 0.2 - t * 0.1;
-      const geo = new THREE.CylinderGeometry(radius * 0.8, radius, segH, 6);
-      const seg = new THREE.Mesh(geo, trunkMat);
-      seg.position.set(lean * t * height, t * height + segH / 2, 0);
-      seg.rotation.z = lean * t;
-      seg.castShadow = true;
-      treeGroup.add(seg);
+    // Curved trunk using TubeGeometry along a CatmullRom curve
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(leanX * 0.2, height * 0.3, leanZ * 0.2),
+      new THREE.Vector3(leanX * 0.5, height * 0.6, leanZ * 0.4),
+      new THREE.Vector3(leanX * 0.7, height * 0.85, leanZ * 0.5),
+      new THREE.Vector3(leanX, height, leanZ),
+    ]);
+    const trunkGeo = new THREE.TubeGeometry(curve, 12, 0.18, 6, false);
+    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+    trunk.castShadow = true;
+    treeGroup.add(trunk);
+
+    // Ring segments on trunk for bark detail
+    const ringMat = new THREE.MeshStandardMaterial({ color: '#6a5a3a', roughness: 0.95 });
+    for (let i = 1; i <= 8; i++) {
+      const t = i / 9;
+      const pos = curve.getPointAt(t);
+      const ringGeo = new THREE.TorusGeometry(0.2, 0.03, 4, 8);
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.copy(pos);
+      ring.rotation.x = Math.PI / 2;
+      treeGroup.add(ring);
     }
 
-    const topX = lean * height;
-    const numFronds = 6 + Math.floor(Math.random() * 3);
+    // Top position
+    const top = curve.getPointAt(1);
+
+    // Coconut cluster at top
+    const coconutMat = new THREE.MeshStandardMaterial({ color: '#5a3a1a', roughness: 0.8 });
+    for (let i = 0; i < 3; i++) {
+      const cGeo = new THREE.SphereGeometry(0.15, 6, 6);
+      const coconut = new THREE.Mesh(cGeo, coconutMat);
+      const ca = (i / 3) * Math.PI * 2;
+      coconut.position.set(top.x + Math.cos(ca) * 0.2, top.y - 0.3, top.z + Math.sin(ca) * 0.2);
+      treeGroup.add(coconut);
+    }
+
+    // Leaf fronds — use elongated triangle shapes
+    const numFronds = 7;
     for (let i = 0; i < numFronds; i++) {
-      const angle = (i / numFronds) * Math.PI * 2 + Math.random() * 0.3;
-      const frondLen = 3 + Math.random() * 2;
-      const droop = 0.3 + Math.random() * 0.4;
-      const frondGeo = new THREE.PlaneGeometry(frondLen, 0.8);
+      const angle = (i / numFronds) * Math.PI * 2 + Math.random() * 0.2;
+      const frondLen = 3.5 + Math.random() * 1.5;
+      const droop = 0.5 + Math.random() * 0.5;
+
+      // Create a tapered frond shape (wide at base, pointed at tip)
+      const shape = new THREE.Shape();
+      shape.moveTo(0, 0);
+      shape.lineTo(frondLen * 0.15, frondLen * 0.3);
+      shape.lineTo(0, frondLen);
+      shape.lineTo(-frondLen * 0.15, frondLen * 0.3);
+      shape.closePath();
+      const frondGeo = new THREE.ShapeGeometry(shape);
       const frond = new THREE.Mesh(frondGeo, leafMat);
-      frond.position.set(
-        topX + Math.cos(angle) * frondLen * 0.4,
-        height - droop * frondLen * 0.3,
-        Math.sin(angle) * frondLen * 0.4
-      );
+
+      frond.position.set(top.x, top.y, top.z);
+      // Rotate to spread outward and droop
       frond.rotation.set(-droop, angle, 0);
+      // Translate along the frond's local Y after rotation
       frond.castShadow = true;
       treeGroup.add(frond);
     }
