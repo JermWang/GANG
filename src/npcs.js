@@ -5,11 +5,6 @@ import { loadModel, cloneModel, setupAnimations, playAnimation, getModelHeight }
 const CIVILIAN_MODELS = [
   'Casual_Male', 'Casual_Female',
   'Casual2_Male', 'Casual2_Female',
-  'Casual3_Male', 'Casual3_Female',
-  'Casual_Bald',
-  'Suit_Male', 'Suit_Female',
-  'Worker_Male', 'Worker_Female',
-  'OldClassy_Male', 'OldClassy_Female',
 ];
 
 const CIVILIAN_BASE_PATH = '/assets/models/glTF-civilians/';
@@ -51,8 +46,8 @@ export class NPCSystem {
   }
 
   initialize() {
-    // Spawn pedestrians on sidewalks
-    for (let i = 0; i < 8; i++) {
+    // Spawn pedestrians on sidewalks (keep it light)
+    for (let i = 0; i < 5; i++) {
       this._spawnPedestrian();
     }
 
@@ -241,8 +236,8 @@ export class NPCSystem {
       // Handle dead NPCs
       if (ped.userData.dead) {
         ped.userData.deathTimer -= dt;
-        if (ped.userData.deathTimer < 3 && ped.position.y > -0.5) {
-          ped.position.y -= dt * 0.3;
+        if (ped.userData.deathTimer < 2 && ped.position.y > -0.5) {
+          ped.position.y -= dt * 0.5;
         }
         if (ped.userData.deathTimer <= 0) {
           ped.userData.dead = false;

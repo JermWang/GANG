@@ -255,14 +255,18 @@ function startGame() {
     });
   }
 
-  // Setup share button
+  // Setup share button — high score tweet with CJ meme
   const shareBtn = document.getElementById('share-btn');
   if (shareBtn) {
     shareBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       const kills = gun ? gun.killCount : 0;
-      const text = encodeURIComponent(`I just got ${kills} kills in $GANG City! 🔫☠️\n\nCome play: `);
-      const url = encodeURIComponent(window.location.href);
+      const siteUrl = window.location.origin;
+      const imageUrl = `${siteUrl}/Desperate-CJ-meme-3.jpg`;
+      const text = encodeURIComponent(
+        `I just dropped ${kills} bodies in $GANG City 🔫☠️\n\nThink you can beat my score?\n\nGrind And Never Give-up 💰\n\n`
+      );
+      const url = encodeURIComponent(siteUrl);
       window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
     });
   }

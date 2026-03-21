@@ -164,7 +164,7 @@ export class GunSystem {
 
     // Mark dead
     npcGroup.userData.dead = true;
-    npcGroup.userData.deathTimer = 5;
+    npcGroup.userData.deathTimer = 3;
     npcGroup.userData.speed = 0;
 
     // Play Death animation if available, otherwise fall back to tilt
