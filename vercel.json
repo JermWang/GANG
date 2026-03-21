@@ -1,7 +1,5 @@
 {
-  "framework": null,
-  "installCommand": "echo 'Skipping install'",
-  "buildCommand": "echo 'Skipping build'",
+  "framework": "vite",
   "headers": [
     {
       "source": "/(.*).mp4",

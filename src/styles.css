@@ -34,7 +34,6 @@ body {
   opacity: 0;
   pointer-events: none;
   transition: opacity 1s ease;
-  display: none !important; /* Force hide after fade */
 }
 
 #intro-video {
@@ -121,7 +120,8 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
+  gap: 1.5rem;
   padding: 2rem;
   background: linear-gradient(
     180deg,
@@ -143,12 +143,12 @@ body {
 .start-header {
   text-align: center;
   padding: 0;
-  margin-top: 4rem;
+  flex-shrink: 0;
 }
 
 .start-logo {
-  max-width: 600px;
-  width: 80%;
+  max-width: 500px;
+  width: 70%;
   height: auto;
   filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.8));
 }

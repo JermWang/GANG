@@ -162,10 +162,11 @@ export class Player {
   }
 
   update(dt, colliders) {
-    if (!this.pointerLocked) return;
-
-    // Update animation mixer
+    // Always update animation mixer
     if (this.mixer) this.mixer.update(dt);
+
+    // Only process input when pointer is locked (desktop) or enabled (mobile)
+    if (!this.pointerLocked) return;
 
     const speed = this.keys.shift ? SPRINT_SPEED : WALK_SPEED;
 
