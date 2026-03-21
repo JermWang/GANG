@@ -36,9 +36,13 @@ body {
   cursor: default;
 }
 
-.nav-logo-img {
-  height: 28px;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+.nav-logo-text {
+  font-family: 'Pricedown Bl', 'Bebas Neue', sans-serif;
+  font-size: 1.6rem;
+  color: #e8a000;
+  letter-spacing: 0.05em;
+  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  white-space: nowrap;
 }
 
 .nav-links {
