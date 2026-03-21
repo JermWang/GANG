@@ -22,11 +22,12 @@ let interactionZones = [];
 let clock;
 let gameStarted = false;
 
-// Camera — GTA SA style third-person
-const CAM_DISTANCE = 5;
-const CAM_HEIGHT = 2;
-const CAM_LERP = 4;
-let camPitch = 0.25;
+// Camera — GTA SA style over-the-shoulder
+const CAM_DISTANCE = 4;
+const CAM_HEIGHT = 1.6;
+const CAM_SHOULDER_OFFSET = 1.0; // offset to the right for over-shoulder view
+const CAM_LERP = 6;
+let camPitch = 0.15;
 
 // ============================
 // INIT
@@ -239,15 +240,19 @@ function startGame() {
   // HUD already visible from start screen
   document.getElementById('game-canvas').requestPointerLock();
 
-  // Snap camera to correct 3rd person position immediately
+  // Snap camera to over-the-shoulder position immediately
   const pPos = player.getPosition();
   const yaw = player.getYaw();
+  const backX = Math.sin(yaw + Math.PI);
+  const backZ = Math.cos(yaw + Math.PI);
+  const rightX = Math.sin(yaw + Math.PI / 2);
+  const rightZ = Math.cos(yaw + Math.PI / 2);
   camera.position.set(
-    pPos.x + Math.sin(yaw + Math.PI) * CAM_DISTANCE,
+    pPos.x + backX * CAM_DISTANCE + rightX * CAM_SHOULDER_OFFSET,
     pPos.y + CAM_HEIGHT + camPitch * 2,
-    pPos.z + Math.cos(yaw + Math.PI) * CAM_DISTANCE
+    pPos.z + backZ * CAM_DISTANCE + rightZ * CAM_SHOULDER_OFFSET
   );
-  camera.lookAt(pPos.x, pPos.y + 1.2, pPos.z);
+  camera.lookAt(pPos.x, pPos.y + 1.3, pPos.z);
 
   // Show gun
   if (gun) gun.show();
@@ -341,22 +346,29 @@ function updateCamera(dt) {
   const playerPos = player.getPosition();
   const yaw = player.getYaw();
 
-  // GTA-style third person: behind and slightly above shoulder
-  const targetX = playerPos.x + Math.sin(yaw + Math.PI) * CAM_DISTANCE;
-  const targetZ = playerPos.z + Math.cos(yaw + Math.PI) * CAM_DISTANCE;
+  // Direction vectors
+  const backX = Math.sin(yaw + Math.PI);
+  const backZ = Math.cos(yaw + Math.PI);
+  // Right vector (perpendicular to back, on XZ plane)
+  const rightX = Math.sin(yaw + Math.PI / 2);
+  const rightZ = Math.cos(yaw + Math.PI / 2);
+
+  // Over-the-shoulder: behind + offset to the right + above
+  const targetX = playerPos.x + backX * CAM_DISTANCE + rightX * CAM_SHOULDER_OFFSET;
+  const targetZ = playerPos.z + backZ * CAM_DISTANCE + rightZ * CAM_SHOULDER_OFFSET;
   const targetY = playerPos.y + CAM_HEIGHT + camPitch * 2;
 
-  // Smooth follow with slight lag (like GTA cam)
+  // Smooth follow
   const lerpFactor = 1 - Math.exp(-CAM_LERP * dt);
   camera.position.x += (targetX - camera.position.x) * lerpFactor;
   camera.position.y += (targetY - camera.position.y) * lerpFactor;
   camera.position.z += (targetZ - camera.position.z) * lerpFactor;
 
-  // Look at player upper body / slightly ahead
-  const lookAhead = 1.5;
+  // Look ahead of the player (not at the player) — aim point
+  const lookAhead = 8;
   const lookTarget = new THREE.Vector3(
     playerPos.x + Math.sin(yaw) * lookAhead,
-    playerPos.y + 1.2,
+    playerPos.y + 1.3,
     playerPos.z + Math.cos(yaw) * lookAhead
   );
   camera.lookAt(lookTarget);

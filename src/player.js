@@ -27,6 +27,9 @@ export class Player {
     this.mesh.name = 'player';
     scene.add(this.mesh);
 
+    // Inner model reference (for offset adjustments)
+    this._model = null;
+
     // Animation state
     this.mixer = null;
     this.actions = null;
@@ -53,13 +56,16 @@ export class Player {
       const scale = targetHeight / rawHeight;
       model.scale.setScalar(scale);
 
-      // Center the model on its origin (fix pivot point)
+      // Force world matrix update so bounding box is accurate
+      model.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(model);
       const center = box.getCenter(new THREE.Vector3());
-      // Only offset X and Z to center horizontally; keep Y at feet
+      // Center horizontally, put feet exactly at y=0 of the group
       model.position.x -= center.x;
       model.position.z -= center.z;
-      model.position.y -= box.min.y; // put feet at y=0
+      model.position.y -= box.min.y;
+
+      this._model = model;
 
       // Enable shadows and fix materials
       model.traverse((child) => {
@@ -83,6 +89,8 @@ export class Player {
 
       // Setup mixer on the character model
       this.mixer = new THREE.AnimationMixer(model);
+      this._groundOffset = 0; // will be recalculated after first anim frame
+      this._groundCalibrated = false;
       this.actions = new Map();
 
       // Load Mixamo animation FBXs and bind them to the character
@@ -199,6 +207,15 @@ export class Player {
   update(dt, colliders) {
     // Always update animation mixer
     if (this.mixer) this.mixer.update(dt);
+
+    // After first animation frame, recalibrate ground offset
+    if (this._model && !this._groundCalibrated && this.mixer) {
+      this._model.updateMatrixWorld(true);
+      const animBox = new THREE.Box3().setFromObject(this._model);
+      // Offset model so animated feet sit at y=0 of group
+      this._model.position.y -= animBox.min.y;
+      this._groundCalibrated = true;
+    }
 
     // Only process input when pointer is locked (desktop) or enabled (mobile)
     if (!this.pointerLocked) return;

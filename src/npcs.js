@@ -100,6 +100,11 @@ export class NPCSystem {
       const scale = NPC_HEIGHT / (h || 1);
       clonedScene.scale.setScalar(scale);
 
+      // Center model so feet sit at y=0 of the group
+      clonedScene.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(clonedScene);
+      clonedScene.position.y -= box.min.y;
+
       // Enable shadows
       clonedScene.traverse((child) => {
         if (child.isMesh) {
