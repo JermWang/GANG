@@ -519,10 +519,10 @@ export class City {
     this.group.add(bbPole);
   }
 
-  // ============ BOUNDARY FOG ============
+  // ============ BOUNDARY WALLS ============
   _createBoundaryFog() {
-    // Add scene fog for natural fade at edges
-    this.scene.fog = new THREE.Fog('#1a1510', AREA_HALF_X * 0.6, AREA_HALF_X * 1.1);
+    // Don't override scene fog here — lighting.js sets the coastal haze
+    // The HDRI sky sphere + FogExp2 from lighting.js handle the sky/fade
 
     // Invisible boundary walls to prevent player from walking off
     const wallMat = new THREE.MeshBasicMaterial({ visible: false });
