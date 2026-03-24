@@ -9,7 +9,7 @@ body {
   background: #000;
   font-family: 'Oswald', 'Inter', sans-serif;
   color: #fff;
-  cursor: none;
+  cursor: default;
 }
 
 .hidden {
