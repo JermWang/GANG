@@ -31,11 +31,6 @@ export function setupLighting(scene) {
   const hemi = new THREE.HemisphereLight('#87ceeb', '#c0a080', 1.8);
   scene.add(hemi);
 
-  // Light coastal haze
-  scene.fog = new THREE.FogExp2('#b0c8e0', 0.004);
-
-  // Background matches sky
-  scene.background = new THREE.Color('#87ceeb');
 }
 
 export function createSkybox(scene) {
