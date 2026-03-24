@@ -6,17 +6,15 @@ import { createGTAPass } from './postprocessing.js';
 import { City } from './city.js';
 import { setupLighting, createSkybox } from './lighting.js';
 import { Minimap } from './minimap.js';
-import { NPCSystem } from './npcs.js';
 import { startAmbient, toggleRadio, isRadioPlaying } from './audio.js';
 
 // ============================
 // GLOBALS
 // ============================
 let scene, camera, renderer, composer, gtaPass;
-let city, minimap, npcs;
+let city, minimap;
 let interactionZones = [];
 let clock;
-let siteReady = false;
 
 // ============================
 // INIT
@@ -61,53 +59,48 @@ async function init() {
   createSkybox(scene);
 
   // City
-  updateLoader(10, 'GENERATING CITY...');
   city = new City(scene);
   const cityData = city.generate();
   interactionZones = cityData.interactionZones;
 
-  updateLoader(40, 'SPAWNING CIVILIANS...');
-
-  // NPCs (pedestrians and traffic — ambient decoration)
-  npcs = new NPCSystem(scene, cityData);
-  await npcs.loadModels();
-  npcs.initialize();
-  updateLoader(70, 'LOADING HUD...');
-
   // Radar (decorative)
   minimap = new Minimap(city.getMinimapData());
-
-  updateLoader(90, 'ALMOST THERE...');
 
   // Events
   window.addEventListener('resize', onResize);
 
-  // Copy CA button
-  const copyBtn = document.getElementById('copy-ca-btn');
-  if (copyBtn) {
-    copyBtn.addEventListener('click', () => {
-      const ca = copyBtn.dataset.ca || 'TBA';
-      navigator.clipboard.writeText(ca).then(() => {
-        const msg = document.getElementById('ca-copied-msg');
-        if (msg) { msg.textContent = 'COPIED!'; setTimeout(() => { msg.textContent = ''; }, 2000); }
-      });
-    });
-  }
-
   // Nav bar panel buttons
   setupNavBar();
 
-  // Loading complete
-  updateLoader(100, 'READY');
-  setTimeout(() => {
-    const enterBtn = document.getElementById('enter-btn');
-    enterBtn.classList.remove('hidden');
-    enterBtn.addEventListener('click', enterSite);
-    enterBtn.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      enterSite();
-    }, { once: true });
-  }, 400);
+  // Show decorative HUD immediately
+  document.getElementById('hud').classList.remove('hidden');
+
+  // Start ambient city sounds
+  startAmbient();
+
+  // Radio toggle
+  const radioBtn = document.getElementById('radio-btn');
+  if (radioBtn) {
+    radioBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleRadio();
+      radioBtn.classList.toggle('active', isRadioPlaying());
+    });
+  }
+
+  // Share button
+  const shareBtn = document.getElementById('share-btn');
+  if (shareBtn) {
+    shareBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const siteUrl = window.location.origin;
+      const text = encodeURIComponent(
+        `$GANG — Grind And Never Give-up 💰\n\nThe next big community token on Solana 🔥\n\n`
+      );
+      const url = encodeURIComponent(siteUrl);
+      window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+    });
+  }
 
   animate();
 }
@@ -172,51 +165,6 @@ function setupNavBar() {
   });
 }
 
-function enterSite() {
-  siteReady = true;
-
-  const startScreen = document.getElementById('start-screen');
-  startScreen.classList.add('fade-out');
-  setTimeout(() => { startScreen.style.display = 'none'; }, 1000);
-
-  // Show decorative HUD
-  document.getElementById('hud').classList.remove('hidden');
-
-  // Start ambient city sounds
-  startAmbient();
-
-  // Radio toggle
-  const radioBtn = document.getElementById('radio-btn');
-  if (radioBtn) {
-    radioBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toggleRadio();
-      radioBtn.classList.toggle('active', isRadioPlaying());
-    });
-  }
-
-  // Share button
-  const shareBtn = document.getElementById('share-btn');
-  if (shareBtn) {
-    shareBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const siteUrl = window.location.origin;
-      const text = encodeURIComponent(
-        `$GANG — Grind And Never Give-up 💰\n\nThe next big community token on Solana 🔥\n\n`
-      );
-      const url = encodeURIComponent(siteUrl);
-      window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
-    });
-  }
-}
-
-function updateLoader(percent, text) {
-  const bar = document.getElementById('loader-bar');
-  const label = document.getElementById('loader-text');
-  if (bar) bar.style.width = `${percent}%`;
-  if (label) label.textContent = text;
-}
-
 // ============================
 // CINEMATIC CAMERA LOOP
 // ============================
@@ -231,11 +179,6 @@ function animate() {
     gtaPass.uniforms.time.value = elapsed;
   }
 
-  // Ambient NPC animation
-  if (npcs) {
-    npcs.update(dt);
-  }
-
   // Cinematic camera — slow orbit around the city
   const t = elapsed;
   const radius = 35;
@@ -247,7 +190,7 @@ function animate() {
   camera.lookAt(-5, 2, -10);
 
   // Update decorative minimap with camera position
-  if (minimap && siteReady) {
+  if (minimap) {
     const camYaw = Math.atan2(camera.position.x + 5, camera.position.z + 10);
     minimap.update(camera.position, camYaw, interactionZones);
   }
@@ -270,7 +213,7 @@ function onResize() {
 // ============================
 // DEBUG (expose for Puppeteer inspection)
 // ============================
-window.__debug = () => ({ scene, camera, npcs, siteReady });
+window.__debug = () => ({ scene, camera });
 
 // ============================
 // INTRO VIDEO FLOW
@@ -298,10 +241,6 @@ function endIntroAndStartLoading() {
     if (video) { video.pause(); video.src = ''; } // free memory
   }, 1000);
 
-  // Show start screen and begin loading the game
-  const startScreen = document.getElementById('start-screen');
-  startScreen.style.display = '';
-  
   init();
 }
 
@@ -313,7 +252,6 @@ function setupIntro() {
 
   if (!overlay || !video || !startBtn) {
     // No intro elements, just start normally
-    document.getElementById('start-screen').style.display = '';
     init();
     return;
   }
