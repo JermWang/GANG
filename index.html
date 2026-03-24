@@ -93,27 +93,12 @@
     </div>
   </div>
 
-  <!-- ROTATE PHONE OVERLAY (only visible when game active + portrait on mobile) -->
-  <div id="rotate-overlay">
-    <div class="rotate-content">
-      <div class="rotate-icon">📱↻</div>
-      <p>Rotate your phone to landscape to play</p>
-    </div>
-  </div>
-
-  <!-- GAME CANVAS -->
+  <!-- GAME CANVAS (cinematic background) -->
   <div id="game-container">
     <canvas id="game-canvas"></canvas>
   </div>
 
-  <!-- CROSSHAIR -->
-  <div id="crosshair">
-    <div class="cross-h"></div>
-    <div class="cross-v"></div>
-    <div class="cross-dot"></div>
-  </div>
-
-  <!-- GTA VICE CITY STYLE HUD — with integrated social links -->
+  <!-- GTA VICE CITY STYLE HUD — decorative overlay -->
   <div id="hud" class="hidden">
 
     <!-- Top-right: Social links as HUD icons -->
@@ -182,37 +167,6 @@
       </div>
     </div>
 
-    <!-- Bottom center: Controls hint -->
-    <div id="hud-controls">
-      <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</span>
-      <span><kbd>SHIFT</kbd> Sprint</span>
-      <span><kbd>LMB</kbd> Shoot</span>
-      <span><kbd>R</kbd> Radio</span>
-      <span><kbd>E</kbd> Interact</span>
-    </div>
-
-    <!-- Mobile touch controls -->
-    <div id="mobile-controls">
-      <div id="joystick-zone">
-        <div id="joystick-base">
-          <div id="joystick-thumb"></div>
-        </div>
-      </div>
-      <div id="mobile-buttons">
-        <button id="mobile-shoot" class="mobile-btn">FIRE</button>
-        <button id="mobile-sprint" class="mobile-btn mobile-btn-sm">SPRINT</button>
-        <button id="mobile-interact" class="mobile-btn mobile-btn-sm">E</button>
-      </div>
-    </div>
-
-    <!-- Interact prompt -->
-    <div id="interact-prompt" class="hidden">
-      <div class="prompt-key">E</div>
-      <div class="prompt-info">
-        <div class="prompt-action">ENTER</div>
-        <div class="prompt-name" id="prompt-name"></div>
-      </div>
-    </div>
   </div>
 
   <!-- GAMIFIED PANELS (opened via nav bar) -->
