@@ -44,7 +44,6 @@ export class City {
     this._createPalmTrees();
     this._createProps();
     this._createTraffic();
-    this._createBoundaryFog();
     return {
       colliders: this.colliders,
       interactionZones: this.interactionZones,
@@ -614,34 +613,6 @@ export class City {
         car.position.x = AREA_HALF_X + 12;
         car.userData.speed = car.userData.baseSpeed;
       }
-    }
-  }
-
-  // ============ BOUNDARY WALLS ============
-  _createBoundaryFog() {
-    // Don't override scene fog here — lighting.js sets the coastal haze
-    // The HDRI sky sphere + FogExp2 from lighting.js handle the sky/fade
-
-    // Invisible boundary walls to prevent player from walking off
-    const wallMat = new THREE.MeshBasicMaterial({ visible: false });
-    const wallH = 10;
-
-    // Left/Right walls (along Z axis)
-    for (const side of [-1, 1]) {
-      const wallGeo = new THREE.BoxGeometry(1, wallH, AREA_HALF_Z * 2);
-      const wall = new THREE.Mesh(wallGeo, wallMat);
-      wall.position.set(AREA_HALF_X * side, wallH / 2, 0);
-      this.group.add(wall);
-      this.colliders.push(new THREE.Box3().setFromObject(wall));
-    }
-
-    // Front/Back walls (along X axis)
-    for (const side of [-1, 1]) {
-      const wallGeo = new THREE.BoxGeometry(AREA_HALF_X * 2, wallH, 1);
-      const wall = new THREE.Mesh(wallGeo, wallMat);
-      wall.position.set(0, wallH / 2, AREA_HALF_Z * side);
-      this.group.add(wall);
-      this.colliders.push(new THREE.Box3().setFromObject(wall));
     }
   }
 
