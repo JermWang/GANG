@@ -84,33 +84,6 @@ async function init() {
   // Nav bar panel buttons
   setupNavBar();
 
-  // Loading complete — show enter button
-  updateLoader(100, 'READY');
-  setTimeout(() => {
-    const enterBtn = document.getElementById('enter-btn');
-    if (enterBtn) {
-      enterBtn.classList.remove('hidden');
-      enterBtn.addEventListener('click', enterSite);
-      enterBtn.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        enterSite();
-      }, { once: true });
-    }
-  }, 400);
-
-  animate();
-}
-
-function enterSite() {
-  const startScreen = document.getElementById('start-screen');
-  if (startScreen) {
-    startScreen.classList.add('fade-out');
-    setTimeout(() => { startScreen.style.display = 'none'; }, 1000);
-  }
-
-  // Show decorative HUD
-  document.getElementById('hud').classList.remove('hidden');
-
   // Start ambient city sounds
   startAmbient();
 
@@ -131,19 +104,14 @@ function enterSite() {
       e.stopPropagation();
       const siteUrl = window.location.origin;
       const text = encodeURIComponent(
-        `$GANG \u2014 Grind And Never Give-up \ud83d\udcb0\n\nThe next big community token on Solana \ud83d\udd25\n\n`
+        `$GANG — Grind And Never Give-up 💰\n\nThe next big community token on Solana 🔥\n\n`
       );
       const url = encodeURIComponent(siteUrl);
       window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
     });
   }
-}
 
-function updateLoader(percent, text) {
-  const bar = document.getElementById('loader-bar');
-  const label = document.getElementById('loader-text');
-  if (bar) bar.style.width = `${percent}%`;
-  if (label) label.textContent = text;
+  animate();
 }
 
 function setupNavBar() {
@@ -282,8 +250,6 @@ function endIntroAndStartLoading() {
     if (video) { video.pause(); video.src = ''; } // free memory
   }, 1000);
 
-  // Show start screen and begin loading
-  document.getElementById('start-screen').style.display = '';
   init();
 }
 
@@ -295,7 +261,6 @@ function setupIntro() {
 
   if (!overlay || !video || !startBtn) {
     // No intro elements, just start normally
-    document.getElementById('start-screen').style.display = '';
     init();
     return;
   }

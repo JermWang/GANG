@@ -55,7 +55,7 @@
   </div>
 
   <!-- START SCREEN — Clean overlay on 3D city background -->
-  <div id="start-screen" style="display:none;">
+  <div id="start-screen">
     <div class="start-header">
       <img src="/gang-text.png" alt="$GANG" class="start-logo" />
     </div>
@@ -83,14 +83,6 @@
       </div>
     </div>
 
-    <!-- Loading / Enter -->
-    <div class="start-footer">
-      <div class="loader-bar-container" id="loader-container">
-        <div class="loader-bar" id="loader-bar"></div>
-      </div>
-      <p class="loader-text" id="loader-text">Loading city...</p>
-      <button id="enter-btn" class="enter-btn hidden">ENTER GANG CITY</button>
-    </div>
   </div>
 
   <!-- GAME CANVAS (cinematic background) -->
@@ -98,8 +90,8 @@
     <canvas id="game-canvas"></canvas>
   </div>
 
-  <!-- GTA VICE CITY STYLE HUD — decorative overlay -->
-  <div id="hud" class="hidden">
+  <!-- GTA VICE CITY STYLE HUD — decorative, always visible -->
+  <div id="hud">
 
     <!-- Top-right: Social links as HUD icons -->
     <div id="hud-socials">
