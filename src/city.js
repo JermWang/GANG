@@ -28,6 +28,7 @@ export class City {
     this.scene = scene;
     this.colliders = [];
     this.interactionZones = [];
+    this.trafficCars = [];
     this.group = new THREE.Group();
     this.group.name = 'city';
     scene.add(this.group);
@@ -42,6 +43,7 @@ export class City {
     this._createStreetLights();
     this._createPalmTrees();
     this._createProps();
+    this._createTraffic();
     this._createBoundaryFog();
     return {
       colliders: this.colliders,
@@ -435,7 +437,7 @@ export class City {
       for (const [tx, tz] of positions) {
         const tree = palmModel.clone();
         tree.position.set(tx, 0, tz);
-        tree.scale.set(0.8, 0.8, 0.8); // Adjust scale as needed
+        tree.scale.set(2.4, 2.4, 2.4); // 3x bigger
         tree.rotation.y = Math.random() * Math.PI * 2; // Random rotation for variety
         this.group.add(tree);
       }
@@ -503,6 +505,116 @@ export class City {
     const bbPoleR = new THREE.Mesh(bbPoleGeo, bbPoleMat);
     bbPoleR.position.set(-10 + 6, 6, -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 24));
     this.group.add(bbPoleR);
+  }
+
+  // ============ TRAFFIC ============
+  _createTraffic() {
+    const carsPerLane = 4;
+    const spacing = (AREA_HALF_X * 1.6) / carsPerLane;
+
+    for (const lane of [1, -1]) {
+      for (let i = 0; i < carsPerLane; i++) {
+        const x = -AREA_HALF_X * 0.8 + i * spacing + (Math.random() - 0.5) * 5;
+        this._spawnCar(lane, x);
+      }
+    }
+  }
+
+  _spawnCar(laneDir, startX) {
+    const car = this._createCarMesh();
+    const laneZ = (ROAD_WIDTH / 4) * laneDir;
+    car.position.set(startX, 0.18, laneZ);
+    car.rotation.y = laneDir > 0 ? -Math.PI / 2 : Math.PI / 2;
+    car.userData.baseSpeed = 8 + Math.random() * 4;
+    car.userData.speed = car.userData.baseSpeed;
+    car.userData.laneDir = laneDir;
+    this.group.add(car);
+    this.trafficCars.push(car);
+  }
+
+  _createCarMesh() {
+    const group = new THREE.Group();
+    const color = CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)];
+    const bodyMat = new THREE.MeshStandardMaterial({ color, roughness: 0.4, metalness: 0.3 });
+    const glassMat = new THREE.MeshStandardMaterial({ color: '#1a2a3a', roughness: 0.1, metalness: 0.8 });
+    const wheelMat = new THREE.MeshStandardMaterial({ color: '#1a1a1a', roughness: 0.9 });
+    const chromeMat = new THREE.MeshStandardMaterial({ color: '#c0c0c0', roughness: 0.2, metalness: 0.9 });
+
+    // Main body
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.8, 4.2), bodyMat);
+    body.position.y = 0.4;
+    body.castShadow = true;
+    group.add(body);
+
+    // Cabin
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.7, 2.2), bodyMat);
+    cabin.position.set(0, 1.1, -0.2);
+    cabin.castShadow = true;
+    group.add(cabin);
+
+    // Windows
+    const windows = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.5, 2.0), glassMat);
+    windows.position.set(0, 1.15, -0.2);
+    group.add(windows);
+
+    // Wheels
+    const wheelGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.25, 12);
+    for (const pos of [[0.9, 0.35, 1.3], [-0.9, 0.35, 1.3], [0.9, 0.35, -1.3], [-0.9, 0.35, -1.3]]) {
+      const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+      wheel.position.set(...pos);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.castShadow = true;
+      group.add(wheel);
+    }
+
+    // Headlights
+    const lightGeo = new THREE.BoxGeometry(0.3, 0.2, 0.1);
+    for (const x of [0.5, -0.5]) {
+      const hl = new THREE.Mesh(lightGeo, chromeMat);
+      hl.position.set(x, 0.5, 2.1);
+      group.add(hl);
+    }
+
+    // Taillights
+    const tailMat = new THREE.MeshStandardMaterial({ color: '#aa0000', emissive: '#330000' });
+    for (const x of [0.5, -0.5]) {
+      const tl = new THREE.Mesh(lightGeo, tailMat);
+      tl.position.set(x, 0.5, -2.1);
+      group.add(tl);
+    }
+
+    return group;
+  }
+
+  updateTraffic(dt) {
+    for (let i = 0; i < this.trafficCars.length; i++) {
+      const car = this.trafficCars[i];
+      const dir = car.userData.laneDir;
+      let targetSpeed = car.userData.baseSpeed;
+
+      // Check distance to car ahead
+      for (let j = 0; j < this.trafficCars.length; j++) {
+        if (i === j) continue;
+        const other = this.trafficCars[j];
+        if (other.userData.laneDir !== dir) continue;
+        const dx = (other.position.x - car.position.x) * dir;
+        if (dx > 0 && dx < 12) {
+          targetSpeed = Math.min(targetSpeed, other.userData.speed * (dx / 12));
+        }
+      }
+
+      car.userData.speed += (targetSpeed - car.userData.speed) * Math.min(dt * 3, 1);
+      car.position.x += dir * car.userData.speed * dt;
+
+      // Wrap at edges
+      if (car.position.x > AREA_HALF_X + 15) {
+        car.position.x = -AREA_HALF_X - 12;
+        car.userData.speed = car.userData.baseSpeed;
+      } else if (car.position.x < -AREA_HALF_X - 15) {
+        car.position.x = AREA_HALF_X + 12;
+        car.userData.speed = car.userData.baseSpeed;
+      }
+    }
   }
 
   // ============ BOUNDARY WALLS ============

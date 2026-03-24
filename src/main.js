@@ -204,6 +204,11 @@ function animate() {
     minimap.update(camera.position, camYaw, interactionZones);
   }
 
+  // Update traffic cars
+  if (city) {
+    city.updateTraffic(dt);
+  }
+
   composer.render();
 }
 
