@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+sers simport * as THREE from 'three';
 
 // Centralized asset loader — loads real PBR textures from /assets/textures/
 // All textures are CC0 from Poly Haven

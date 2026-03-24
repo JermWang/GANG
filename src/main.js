@@ -165,6 +165,11 @@ async function init() {
     const enterBtn = document.getElementById('enter-btn');
     enterBtn.classList.remove('hidden');
     enterBtn.addEventListener('click', startGame);
+    // Mobile touch support for enter button
+    enterBtn.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      startGame();
+    }, { once: true });
   }, 400);
 
   animate();
@@ -239,8 +244,22 @@ function startGame() {
   startScreen.classList.add('fade-out');
   setTimeout(() => { startScreen.style.display = 'none'; }, 1000);
 
-  // HUD already visible from start screen
-  document.getElementById('game-canvas').requestPointerLock();
+  // Now show the HUD and crosshair (not before)
+  document.getElementById('hud').classList.remove('hidden');
+  document.getElementById('crosshair').classList.add('visible');
+
+  // Show landscape prompt on mobile
+  const rotateOverlay = document.getElementById('rotate-overlay');
+  if (rotateOverlay) rotateOverlay.classList.add('game-active');
+
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || 
+                   ('ontouchstart' in window && window.innerWidth < 900);
+  if (isMobile) {
+    // No pointer lock on mobile — enable movement directly
+    player.pointerLocked = true;
+  } else {
+    document.getElementById('game-canvas').requestPointerLock();
+  }
 
   // Snap camera to over-the-shoulder position immediately
   const pPos = player.getPosition();
@@ -556,9 +575,6 @@ function endIntroAndStartLoading() {
   const startScreen = document.getElementById('start-screen');
   startScreen.style.display = '';
   
-  // Show HUD components on start screen (GTA style)
-  document.getElementById('hud').classList.remove('hidden');
-  
   init();
 }
 
@@ -571,7 +587,6 @@ function setupIntro() {
   if (!overlay || !video || !startBtn) {
     // No intro elements, just start normally
     document.getElementById('start-screen').style.display = '';
-    document.getElementById('hud').classList.remove('hidden');
     init();
     return;
   }
@@ -582,10 +597,20 @@ function setupIntro() {
     endIntroAndStartLoading();
   }, { once: true });
 
+  // Timeout: if video doesn't load within 4s (e.g. mobile), skip intro
+  const videoTimeout = setTimeout(() => {
+    if (!initStarted) {
+      console.log('Intro video load timeout, skipping to start screen');
+      endIntroAndStartLoading();
+    }
+  }, 4000);
+
+  video.addEventListener('loadeddata', () => clearTimeout(videoTimeout), { once: true });
+
   // Try to load the video metadata
   video.load();
 
-  startBtn.addEventListener('click', () => {
+  function onIntroStart() {
     // Hide the click prompt immediately and permanently
     clickPrompt.style.display = 'none';
     clickPrompt.style.visibility = 'hidden';
@@ -593,12 +618,13 @@ function setupIntro() {
     
     // Ensure video doesn't loop
     video.loop = false;
+    clearTimeout(videoTimeout);
     
     // Play video with audio
     const playPromise = video.play();
     if (playPromise !== undefined) {
       playPromise.catch(() => {
-        // If video play fails, skip to game
+        // If video play fails (common on mobile), skip to game
         endIntroAndStartLoading();
       });
     }
@@ -611,7 +637,19 @@ function setupIntro() {
       e.stopPropagation();
       endIntroAndStartLoading();
     });
+    skipBtn.addEventListener('touchend', (e) => {
+      e.stopPropagation();
+      endIntroAndStartLoading();
+    });
     overlay.appendChild(skipBtn);
+  }
+
+  startBtn.addEventListener('click', onIntroStart, { once: true });
+  // Also handle touchend for mobile (some browsers delay click events)
+  startBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    startBtn.removeEventListener('click', onIntroStart);
+    onIntroStart();
   }, { once: true });
 
   // When video ends naturally, transition to start screen
