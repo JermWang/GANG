@@ -531,25 +531,35 @@ export class City {
       this.group.add(trash);
     }
 
-    // Billboard near gas station
-    const bbTex = createSignTexture('$GANG — GRIND AND NEVER GIVE-UP', 1024, 256, {
-      bgColor: 'rgba(30, 20, 10, 0.9)',
-      textColor: '#e8a000',
-      fontSize: 56,
-      borderColor: '#e8a000',
-    });
-    const bbGeo = new THREE.PlaneGeometry(12, 3);
-    const bbMat = new THREE.MeshBasicMaterial({ map: bbTex, transparent: true, side: THREE.DoubleSide });
+    // Billboard near gas station — uses actual banner image
+    const bbLoader = new THREE.TextureLoader();
+    const bbTex = bbLoader.load('/gang banner.png');
+    bbTex.colorSpace = THREE.SRGBColorSpace;
+    const bbGeo = new THREE.PlaneGeometry(18, 6);
+    const bbMat = new THREE.MeshBasicMaterial({ map: bbTex, side: THREE.DoubleSide });
     const billboard = new THREE.Mesh(bbGeo, bbMat);
-    billboard.position.set(-10, 10, -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 24));
+    billboard.position.set(-10, 12, -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 24));
     this.group.add(billboard);
 
-    // Billboard pole
+    // Billboard frame
+    const frameMat = new THREE.MeshStandardMaterial({ color: '#2a2a28', roughness: 0.5, metalness: 0.6 });
+    const frameW = 18.4, frameH = 6.4, frameD = 0.15;
+    const frameBack = new THREE.Mesh(
+      new THREE.BoxGeometry(frameW, frameH, frameD),
+      frameMat
+    );
+    frameBack.position.set(-10, 12, -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 24) - 0.1);
+    this.group.add(frameBack);
+
+    // Billboard poles (two support poles)
     const bbPoleMat = new THREE.MeshStandardMaterial({ color: '#4a4a48', roughness: 0.6, metalness: 0.4 });
-    const bbPoleGeo = new THREE.CylinderGeometry(0.15, 0.2, 10, 6);
-    const bbPole = new THREE.Mesh(bbPoleGeo, bbPoleMat);
-    bbPole.position.set(-10, 5, -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 24));
-    this.group.add(bbPole);
+    const bbPoleGeo = new THREE.CylinderGeometry(0.2, 0.25, 12, 6);
+    const bbPoleL = new THREE.Mesh(bbPoleGeo, bbPoleMat);
+    bbPoleL.position.set(-10 - 6, 6, -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 24));
+    this.group.add(bbPoleL);
+    const bbPoleR = new THREE.Mesh(bbPoleGeo, bbPoleMat);
+    bbPoleR.position.set(-10 + 6, 6, -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 24));
+    this.group.add(bbPoleR);
   }
 
   // ============ BOUNDARY WALLS ============
