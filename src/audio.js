@@ -180,108 +180,25 @@ export function stopAmbient() {
   }
 }
 
-// ========== VICE CITY RADIO (Synthwave generator) ==========
-let radioNodes = null;
+// ========== GTA RADIO (MP3 playback) ==========
+let radioAudio = null;
 
 export function startRadio() {
   if (radioPlaying) return;
-  const c = getCtx();
   radioPlaying = true;
 
-  // Simple synthwave loop using oscillators
-  const nodes = { oscs: [], gains: [], intervals: [] };
-
-  // Bass line (repeating pattern)
-  const bassNotes = [55, 55, 73.42, 65.41, 55, 55, 82.41, 73.42]; // Am pattern
-  let bassIdx = 0;
-  const bassOsc = c.createOscillator();
-  bassOsc.type = 'sawtooth';
-  bassOsc.frequency.value = bassNotes[0];
-
-  const bassFilter = c.createBiquadFilter();
-  bassFilter.type = 'lowpass';
-  bassFilter.frequency.value = 300;
-  bassFilter.Q.value = 5;
-
-  const bassGain = c.createGain();
-  bassGain.gain.value = 0.3;
-
-  bassOsc.connect(bassFilter).connect(bassGain).connect(musicGain);
-  bassOsc.start();
-  nodes.oscs.push(bassOsc);
-  nodes.gains.push(bassGain);
-
-  const bassInterval = setInterval(() => {
-    bassIdx = (bassIdx + 1) % bassNotes.length;
-    bassOsc.frequency.setTargetAtTime(bassNotes[bassIdx], c.currentTime, 0.05);
-  }, 500);
-  nodes.intervals.push(bassInterval);
-
-  // Pad (sustained chord)
-  const padNotes = [220, 261.63, 329.63]; // Am chord
-  for (const freq of padNotes) {
-    const osc = c.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-
-    const padGain = c.createGain();
-    padGain.gain.value = 0.06;
-
-    osc.connect(padGain).connect(musicGain);
-    osc.start();
-    nodes.oscs.push(osc);
-    nodes.gains.push(padGain);
+  if (!radioAudio) {
+    radioAudio = new Audio('/Grand_Theft_Auto_San_Andreas_-_Theme_Song_(mp3.pm).mp3');
+    radioAudio.loop = true;
+    radioAudio.volume = 0.3;
   }
-
-  // Hi-hat pattern (noise bursts)
-  const hatInterval = setInterval(() => {
-    const t = c.currentTime;
-    const bufLen = c.sampleRate * 0.02;
-    const buf = c.createBuffer(1, bufLen, c.sampleRate);
-    const d = buf.getChannelData(0);
-    for (let i = 0; i < bufLen; i++) {
-      d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufLen * 0.3));
-    }
-    const src = c.createBufferSource();
-    src.buffer = buf;
-    const hp = c.createBiquadFilter();
-    hp.type = 'highpass';
-    hp.frequency.value = 8000;
-    const g = c.createGain();
-    g.gain.value = 0.08;
-    src.connect(hp).connect(g).connect(musicGain);
-    src.start();
-  }, 250);
-  nodes.intervals.push(hatInterval);
-
-  // Kick drum every beat
-  const kickInterval = setInterval(() => {
-    const t = c.currentTime;
-    const kickOsc = c.createOscillator();
-    kickOsc.frequency.setValueAtTime(150, t);
-    kickOsc.frequency.exponentialRampToValueAtTime(30, t + 0.12);
-    const kickGain = c.createGain();
-    kickGain.gain.setValueAtTime(0.25, t);
-    kickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-    kickOsc.connect(kickGain).connect(musicGain);
-    kickOsc.start(t);
-    kickOsc.stop(t + 0.2);
-  }, 500);
-  nodes.intervals.push(kickInterval);
-
-  radioNodes = nodes;
+  radioAudio.play().catch(() => {});
 }
 
 export function stopRadio() {
-  if (!radioNodes) return;
+  if (!radioAudio) return;
   radioPlaying = false;
-  for (const osc of radioNodes.oscs) {
-    try { osc.stop(); } catch(e) {}
-  }
-  for (const id of radioNodes.intervals) {
-    clearInterval(id);
-  }
-  radioNodes = null;
+  radioAudio.pause();
 }
 
 export function isRadioPlaying() {
