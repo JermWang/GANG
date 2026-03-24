@@ -1,0 +1,11 @@
+Model Information:
+* title:	Palm Tree Realistic
+* source:	https://sketchfab.com/3d-models/palm-tree-realistic-ced3b31f14f940d0b7480a83e6f8c9c0
+* author:	00amza (https://sketchfab.com/00amza)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Palm Tree Realistic" (https://sketchfab.com/3d-models/palm-tree-realistic-ced3b31f14f940d0b7480a83e6f8c9c0) by 00amza (https://sketchfab.com/00amza) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

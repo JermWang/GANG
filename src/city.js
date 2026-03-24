@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import {
   createAsphaltMaterial,
   createSidewalkMaterial,
@@ -409,10 +410,9 @@ export class City {
 
   // ============ PALM TREES ============
   _createPalmTrees() {
-    const trunkMat = new THREE.MeshStandardMaterial({ color: '#5a4a30', roughness: 0.9 });
-    const leafMat = new THREE.MeshStandardMaterial({ color: '#3a6a2a', roughness: 0.7, side: THREE.DoubleSide });
-
-    // A few along the sidewalks
+    const loader = new GLTFLoader();
+    
+    // Palm tree positions along sidewalks
     const positions = [
       [-35, -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 2)],
       [-15, (ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 2)],
@@ -421,82 +421,25 @@ export class City {
       [-5, (ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 25)],
       [25, -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 20)],
     ];
-    for (const [tx, tz] of positions) {
-      this._addPalmTree(tx, tz, trunkMat, leafMat);
-    }
-  }
 
-  _addPalmTree(x, z, trunkMat, leafMat) {
-    const treeGroup = new THREE.Group();
-    const height = 8 + Math.random() * 4;
-    const leanX = (Math.random() - 0.5) * 2;
-    const leanZ = (Math.random() - 0.5) * 2;
+    // Load the palm tree model once, then clone for each position
+    loader.load('/palm tree/scene.gltf', (gltf) => {
+      const palmModel = gltf.scene;
+      palmModel.traverse((node) => {
+        if (node.isMesh) {
+          node.castShadow = true;
+          node.receiveShadow = true;
+        }
+      });
 
-    // Curved trunk using TubeGeometry along a CatmullRom curve
-    const curve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(leanX * 0.2, height * 0.3, leanZ * 0.2),
-      new THREE.Vector3(leanX * 0.5, height * 0.6, leanZ * 0.4),
-      new THREE.Vector3(leanX * 0.7, height * 0.85, leanZ * 0.5),
-      new THREE.Vector3(leanX, height, leanZ),
-    ]);
-    const trunkGeo = new THREE.TubeGeometry(curve, 12, 0.18, 6, false);
-    const trunk = new THREE.Mesh(trunkGeo, trunkMat);
-    trunk.castShadow = true;
-    treeGroup.add(trunk);
-
-    // Ring segments on trunk for bark detail
-    const ringMat = new THREE.MeshStandardMaterial({ color: '#6a5a3a', roughness: 0.95 });
-    for (let i = 1; i <= 8; i++) {
-      const t = i / 9;
-      const pos = curve.getPointAt(t);
-      const ringGeo = new THREE.TorusGeometry(0.2, 0.03, 4, 8);
-      const ring = new THREE.Mesh(ringGeo, ringMat);
-      ring.position.copy(pos);
-      ring.rotation.x = Math.PI / 2;
-      treeGroup.add(ring);
-    }
-
-    // Top position
-    const top = curve.getPointAt(1);
-
-    // Coconut cluster at top
-    const coconutMat = new THREE.MeshStandardMaterial({ color: '#5a3a1a', roughness: 0.8 });
-    for (let i = 0; i < 3; i++) {
-      const cGeo = new THREE.SphereGeometry(0.15, 6, 6);
-      const coconut = new THREE.Mesh(cGeo, coconutMat);
-      const ca = (i / 3) * Math.PI * 2;
-      coconut.position.set(top.x + Math.cos(ca) * 0.2, top.y - 0.3, top.z + Math.sin(ca) * 0.2);
-      treeGroup.add(coconut);
-    }
-
-    // Leaf fronds — use elongated triangle shapes
-    const numFronds = 7;
-    for (let i = 0; i < numFronds; i++) {
-      const angle = (i / numFronds) * Math.PI * 2 + Math.random() * 0.2;
-      const frondLen = 3.5 + Math.random() * 1.5;
-      const droop = 0.5 + Math.random() * 0.5;
-
-      // Create a tapered frond shape (wide at base, pointed at tip)
-      const shape = new THREE.Shape();
-      shape.moveTo(0, 0);
-      shape.lineTo(frondLen * 0.15, frondLen * 0.3);
-      shape.lineTo(0, frondLen);
-      shape.lineTo(-frondLen * 0.15, frondLen * 0.3);
-      shape.closePath();
-      const frondGeo = new THREE.ShapeGeometry(shape);
-      const frond = new THREE.Mesh(frondGeo, leafMat);
-
-      frond.position.set(top.x, top.y, top.z);
-      // Rotate to spread outward and droop
-      frond.rotation.set(-droop, angle, 0);
-      // Translate along the frond's local Y after rotation
-      frond.castShadow = true;
-      treeGroup.add(frond);
-    }
-
-    treeGroup.position.set(x, 0, z);
-    this.group.add(treeGroup);
+      for (const [tx, tz] of positions) {
+        const tree = palmModel.clone();
+        tree.position.set(tx, 0, tz);
+        tree.scale.set(0.8, 0.8, 0.8); // Adjust scale as needed
+        tree.rotation.y = Math.random() * Math.PI * 2; // Random rotation for variety
+        this.group.add(tree);
+      }
+    });
   }
 
   // ============ PROPS ============
