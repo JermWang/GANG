@@ -69,9 +69,16 @@ async function init() {
   // Events
   window.addEventListener('resize', onResize);
 
-  // Copy CA button
+  // Contract Address from env
+  const CONTRACT_ADDRESS = import.meta.env.VITE_TOKEN_CONTRACT_ADDRESS || 'TBA';
+
+  // Update all CA display elements
+  const caAddr = document.getElementById('ca-addr');
+  if (caAddr) caAddr.textContent = CONTRACT_ADDRESS;
+
   const copyBtn = document.getElementById('copy-ca-btn');
   if (copyBtn) {
+    copyBtn.dataset.ca = CONTRACT_ADDRESS;
     copyBtn.addEventListener('click', () => {
       const ca = copyBtn.dataset.ca || 'TBA';
       navigator.clipboard.writeText(ca).then(() => {
@@ -80,6 +87,12 @@ async function init() {
       });
     });
   }
+
+  const hudContractAddr = document.querySelector('.contract-addr');
+  if (hudContractAddr) hudContractAddr.textContent = CONTRACT_ADDRESS;
+
+  const buyPanelContract = document.querySelector('#panel-buy .token-row .mono');
+  if (buyPanelContract) buyPanelContract.textContent = CONTRACT_ADDRESS;
 
   // Nav bar panel buttons
   setupNavBar();
