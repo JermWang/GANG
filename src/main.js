@@ -68,7 +68,9 @@ async function init() {
   window.addEventListener('resize', onResize);
 
   // Contract Address from env
-  const CONTRACT_ADDRESS = import.meta.env.VITE_TOKEN_CONTRACT_ADDRESS || 'TBA';
+  // Live mint. Env var overrides it so the address can be changed without a
+  // code edit, but the default keeps the site correct with no env configured.
+  const CONTRACT_ADDRESS = import.meta.env.VITE_TOKEN_CONTRACT_ADDRESS || '6Xr9EUUCFPwTY91grn4v4Cmiv5atM2EEhC8cYRYXpump';
 
   // Update all CA display elements
   const caAddr = document.getElementById('ca-addr');
@@ -78,7 +80,7 @@ async function init() {
   if (copyBtn) {
     copyBtn.dataset.ca = CONTRACT_ADDRESS;
     copyBtn.addEventListener('click', () => {
-      const ca = copyBtn.dataset.ca || 'TBA';
+      const ca = copyBtn.dataset.ca || CONTRACT_ADDRESS;
       navigator.clipboard.writeText(ca).then(() => {
         const msg = document.getElementById('ca-copied-msg');
         if (msg) { msg.textContent = 'COPIED!'; setTimeout(() => { msg.textContent = ''; }, 2000); }
@@ -126,8 +128,10 @@ async function init() {
 }
 
 function setupExternalLinks() {
+  const mint = import.meta.env.VITE_TOKEN_CONTRACT_ADDRESS || '6Xr9EUUCFPwTY91grn4v4Cmiv5atM2EEhC8cYRYXpump';
   const urls = {
-    dexscreener: import.meta.env.VITE_DEXSCREENER_URL,
+    // Dexscreener resolves by mint address, so this needs no configuration
+    dexscreener: import.meta.env.VITE_DEXSCREENER_URL || `https://dexscreener.com/solana/${mint}`,
     buy: import.meta.env.VITE_BUY_URL,
   };
 
