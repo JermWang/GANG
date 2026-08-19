@@ -9,7 +9,7 @@ export class Minimap {
     this.radarRange = 50;
   }
 
-  update(playerPos, playerYaw, interactionZones) {
+  update(playerPos, playerYaw) {
     const ctx = this.ctx;
     const size = this.size;
     const half = size / 2;

@@ -13,7 +13,6 @@ import { startAmbient, toggleRadio, isRadioPlaying } from './audio.js';
 // ============================
 let scene, camera, renderer, composer, gtaPass;
 let city, minimap;
-let interactionZones = [];
 let clock;
 
 // ============================
@@ -60,8 +59,7 @@ async function init() {
 
   // City
   city = new City(scene);
-  const cityData = city.generate();
-  interactionZones = cityData.interactionZones;
+  city.generate();
 
   // Radar (decorative)
   minimap = new Minimap(city.getMinimapData());
@@ -131,7 +129,6 @@ function setupExternalLinks() {
   const urls = {
     dexscreener: import.meta.env.VITE_DEXSCREENER_URL,
     buy: import.meta.env.VITE_BUY_URL,
-    discord: import.meta.env.VITE_DISCORD_URL,
   };
 
   document.querySelectorAll('[data-external]').forEach((el) => {
@@ -237,7 +234,7 @@ function animate() {
   // Update decorative minimap with camera position
   if (minimap) {
     const camYaw = Math.atan2(camera.position.x + 5, camera.position.z + 10);
-    minimap.update(camera.position, camYaw, interactionZones);
+    minimap.update(camera.position, camYaw);
   }
 
   // Update traffic cars

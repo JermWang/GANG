@@ -5,8 +5,9 @@ live Three.js city rendered behind the UI, plus mission / leaderboard / buy
 panels.
 
 The page is a **cinematic landing site**, not a playable game — the camera
-orbits the city automatically and the HUD (health, wanted stars, radar) is
-decorative styling.
+orbits the city automatically and the remaining HUD pieces (wanted stars,
+radar) are decorative styling only. There is no player, no collision, and no
+interaction system.
 
 ## Getting Started
 
@@ -33,7 +34,6 @@ greyed-out "Coming soon" instead of a dead link.
 | `VITE_TOKEN_CONTRACT_ADDRESS` | CA shown on the start screen, HUD, and BUY panel |
 | `VITE_DEXSCREENER_URL` | Dexscreener links |
 | `VITE_BUY_URL` | Buy button (Raydium / Jupiter / pump.fun) |
-| `VITE_DISCORD_URL` | Discord invite card |
 
 On Vercel, set these under **Project → Settings → Environment Variables**, then
 redeploy. Vite inlines `VITE_*` values at build time, so a rebuild is required

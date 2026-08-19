@@ -21,13 +21,9 @@ const CAR_COLORS = [
   '#c8a030', '#404040', '#6a1a1a', '#2a2a6a', '#d0c0a0',
 ];
 
-export const SPECIAL_BUILDINGS = [];
-
 export class City {
   constructor(scene) {
     this.scene = scene;
-    this.colliders = [];
-    this.interactionZones = [];
     this.trafficCars = [];
     this.group = new THREE.Group();
     this.group.name = 'city';
@@ -44,12 +40,6 @@ export class City {
     this._createPalmTrees();
     this._createProps();
     this._createTraffic();
-    return {
-      colliders: this.colliders,
-      interactionZones: this.interactionZones,
-      // Export bounds for NPC system
-      bounds: { halfX: AREA_HALF_X, halfZ: AREA_HALF_Z, roadWidth: ROAD_WIDTH },
-    };
   }
 
   // ============ GROUND ============
@@ -141,7 +131,6 @@ export class City {
     building.castShadow = true;
     building.receiveShadow = true;
     this.group.add(building);
-    this.colliders.push(new THREE.Box3().setFromObject(building));
 
     // Flat roof overhang
     const roofGeo = new THREE.BoxGeometry(buildW + 2, 0.3, buildD + 2);
@@ -232,10 +221,6 @@ export class City {
       this.group.add(hose);
 
       // Collider for pump
-      this.colliders.push(new THREE.Box3(
-        new THREE.Vector3(px - 0.5, 0, pz - 0.8),
-        new THREE.Vector3(px + 0.5, 2, pz + 0.8)
-      ));
     }
 
     // Concrete pad under pumps
@@ -298,7 +283,6 @@ export class City {
     back.position.set(lotX, 0.3, lotZ + lotD / 2);
     back.castShadow = true;
     this.group.add(back);
-    this.colliders.push(new THREE.Box3().setFromObject(back));
 
     // Side walls
     for (const side of [-1, 1]) {
@@ -307,7 +291,6 @@ export class City {
       sw.position.set(lotX + (lotW / 2 + 0.2) * side, 0.3, lotZ);
       sw.castShadow = true;
       this.group.add(sw);
-      this.colliders.push(new THREE.Box3().setFromObject(sw));
     }
   }
 
@@ -369,7 +352,6 @@ export class City {
     carGroup.position.set(x, 0, z);
     carGroup.rotation.y = rotation;
     this.group.add(carGroup);
-    this.colliders.push(new THREE.Box3().setFromObject(carGroup));
   }
 
   // ============ STREET LIGHTS ============
@@ -454,7 +436,6 @@ export class City {
     dumpster.position.set(-16, 0.6, -(ROAD_WIDTH / 2 + SIDEWALK_WIDTH + 18));
     dumpster.castShadow = true;
     this.group.add(dumpster);
-    this.colliders.push(new THREE.Box3().setFromObject(dumpster));
 
     // Fire hydrant
     const hydrantMat = new THREE.MeshStandardMaterial({ color: '#c04020', roughness: 0.6 });
@@ -617,10 +598,6 @@ export class City {
     }
   }
 
-  getSpawnPosition() {
-    // Spawn player on the sidewalk near the gas station
-    return new THREE.Vector3(0, 0.2, -(ROAD_WIDTH / 2 + 2));
-  }
 
   getMinimapData() {
     return {

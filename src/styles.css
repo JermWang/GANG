@@ -459,160 +459,6 @@ body {
   transform: translateY(-2px);
 }
 
-/* Footer: Loading + Enter */
-.start-footer {
-  text-align: center;
-  width: 100%;
-  max-width: 400px;
-}
-
-.start-footer .loader-bar-container {
-  width: 100%;
-  height: 4px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid rgba(232, 160, 0, 0.3);
-  margin-bottom: 0.5rem;
-}
-
-.start-footer .loader-bar {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, #c48800, #e8a000, #ffcc00);
-  transition: width 0.3s ease;
-}
-
-.start-footer .loader-text {
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.75rem;
-  color: #888;
-  letter-spacing: 0.1em;
-  margin-bottom: 0.5rem;
-}
-
-.start-footer .enter-btn {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.8rem;
-  letter-spacing: 0.15em;
-  padding: 0.6em 2em;
-  background: linear-gradient(180deg, #e8a000 0%, #c47000 100%);
-  border: none;
-  border-bottom: 4px solid #8a4a00;
-  color: #000;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  margin-bottom: 1rem;
-}
-
-.start-footer .enter-btn:hover {
-  background: linear-gradient(180deg, #ffc000, #e88000);
-  transform: translateY(-2px);
-}
-
-
-.gang-logo {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 9rem;
-  letter-spacing: 0.15em;
-  color: #e8a000;
-  text-shadow: 
-    0 0 60px rgba(232, 160, 0, 0.35),
-    0 4px 0 #8a5a00,
-    0 8px 0 #5a3800,
-    4px 4px 8px rgba(0,0,0,0.8);
-  line-height: 1;
-  margin-bottom: 0.15em;
-  -webkit-text-stroke: 1px rgba(0,0,0,0.3);
-}
-
-.gang-logo-img {
-  max-width: 500px;
-  width: 80%;
-  height: auto;
-  margin-bottom: 2rem;
-  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.6));
-}
-
-.gang-tagline {
-  font-family: 'Oswald', sans-serif;
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: 0.5em;
-  color: #c48800;
-  margin-bottom: 2rem;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.6);
-}
-
-.loader-bar-container {
-  width: 340px;
-  height: 6px;
-  background: #1a1200;
-  border: 1px solid #3a2800;
-  margin: 0 auto 0.8rem;
-  overflow: hidden;
-}
-
-.loader-bar {
-  height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, #c48800, #e8a000, #ffcc00);
-  transition: width 0.3s ease;
-}
-
-.loader-text {
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.8rem;
-  font-weight: 400;
-  color: #6a5000;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-}
-
-.enter-btn {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 2rem;
-  letter-spacing: 0.2em;
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;
-  padding: 0.5em 2.5em;
-  background: linear-gradient(180deg, #e8a000 0%, #c47000 100%);
-  border: none;
-  border-bottom: 4px solid #8a4a00;
-  color: #000;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  margin-top: 1.5rem;
-  text-shadow: 0 1px 0 rgba(255,255,255,0.2);
-}
-
-.enter-btn:hover {
-  background: linear-gradient(180deg, #ffcc00 0%, #e89000 100%);
-  transform: translateY(-2px);
-  border-bottom-width: 6px;
-}
-
-.enter-btn:active {
-  transform: translateY(1px);
-  border-bottom-width: 2px;
-}
-
-.load-bottom-hint {
-  margin-top: 2.5rem;
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.7rem;
-  font-weight: 400;
-  color: #4a3500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.load-bottom-hint span {
-  color: #8a6500;
-  font-weight: 600;
-  background: rgba(232, 160, 0, 0.08);
-  padding: 2px 6px;
-  border: 1px solid rgba(232, 160, 0, 0.15);
-}
-
 /* ================================================
    GAME CANVAS
    ================================================ */
@@ -679,63 +525,6 @@ body {
 
 .hud-social-icon svg {
   filter: drop-shadow(1px 1px 0 #000);
-}
-
-/* --- Health Bar (Vice City style) --- */
-#hud-health-vc {
-  position: absolute;
-  top: 52px;
-  right: 16px;
-}
-
-.vc-bar-track {
-  width: 120px;
-  height: 14px;
-  background: rgba(0, 0, 0, 0.6);
-  border: 2px solid #000;
-}
-
-.vc-bar-fill.health {
-  height: 100%;
-  background: linear-gradient(180deg, #d83030, #a02020);
-}
-
-/* --- Kill Counter --- */
-#hud-kills {
-  position: absolute;
-  top: 74px;
-  right: 16px;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.4rem;
-  letter-spacing: 0.02em;
-  color: #ff4444;
-  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.kills-icon {
-  font-size: 1.1rem;
-}
-
-/* --- Ammo Counter --- */
-#hud-ammo {
-  position: absolute;
-  top: 100px;
-  right: 16px;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.3rem;
-  letter-spacing: 0.02em;
-  color: #e0d0b0;
-  text-shadow: 2px 2px 0 #000, -1px -1px 0 #000;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.ammo-icon {
-  font-size: 1rem;
 }
 
 /* --- Wanted Stars (Vice City gold) --- */
@@ -817,25 +606,6 @@ body {
   filter: drop-shadow(1px 1px 0 #000);
 }
 
-/* --- Radio indicator --- */
-#radio-indicator {
-  position: absolute;
-  top: 155px;
-  right: 16px;
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.6rem;
-  color: #e8a000;
-  text-shadow: 1px 1px 0 #000;
-  letter-spacing: 0.1em;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-#radio-indicator.visible {
-  opacity: 1;
-}
-
-
 .vc-star {
   font-size: 1.3rem;
   color: #333;
@@ -872,27 +642,6 @@ body {
   border-radius: 50%;
 }
 
-.radar-icons {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-
-.radar-icon {
-  position: absolute;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 0.9rem;
-  color: #ff69b4;
-  text-shadow: 0 0 4px #ff69b4;
-  background: rgba(255, 105, 180, 0.3);
-  width: 18px;
-  height: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 2px;
-}
-
 .radar-n {
   position: absolute;
   bottom: 8px;
@@ -903,7 +652,6 @@ body {
   color: #fff;
   text-shadow: 1px 1px 0 #000;
 }
-
 
 /* ================================================
    PANEL OVERLAY — GTA pause-menu style
@@ -1129,143 +877,6 @@ body {
   color: #fff;
 }
 
-/* Tokenomics grid */
-.tokenomics-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.6rem;
-}
-
-.tokenomics-card {
-  background: rgba(232, 160, 0, 0.03);
-  border: 1px solid rgba(232, 160, 0, 0.08);
-  padding: 1rem;
-  text-align: center;
-}
-
-.tokenomics-value {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.5rem;
-  color: #fff;
-  letter-spacing: 0.05em;
-}
-
-.tokenomics-label {
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.65rem;
-  font-weight: 400;
-  color: #6a5a40;
-  margin-top: 0.3rem;
-  letter-spacing: 0.1em;
-}
-
-/* Roadmap */
-.roadmap {
-  position: relative;
-  padding-left: 28px;
-}
-
-.roadmap::before {
-  content: '';
-  position: absolute;
-  left: 7px;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: rgba(232, 160, 0, 0.12);
-}
-
-.roadmap-phase {
-  position: relative;
-  margin-bottom: 1.5rem;
-  opacity: 0.4;
-}
-
-.roadmap-phase.active { opacity: 1; }
-
-.phase-marker {
-  position: absolute;
-  left: -24px;
-  top: 5px;
-  width: 10px;
-  height: 10px;
-  background: #333;
-  border: 2px solid #555;
-}
-
-.roadmap-phase.active .phase-marker {
-  background: #e8a000;
-  border-color: #e8a000;
-  box-shadow: 0 0 8px rgba(232, 160, 0, 0.5);
-}
-
-.phase-content h4 {
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: #d0c0a0;
-  margin-bottom: 0.4rem;
-}
-
-.phase-content ul {
-  list-style: none;
-  padding: 0;
-}
-
-.phase-content li {
-  font-family: 'Oswald', sans-serif;
-  font-weight: 400;
-  font-size: 0.8rem;
-  color: #7a6a50;
-  padding: 0.15rem 0 0.15rem 1em;
-  position: relative;
-  letter-spacing: 0.03em;
-}
-
-.phase-content li::before {
-  content: '>';
-  position: absolute;
-  left: 0;
-  color: #4a3a20;
-}
-
-/* Meme grid */
-.meme-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0.5rem;
-}
-
-.meme-slot {
-  aspect-ratio: 1;
-  background: rgba(232, 160, 0, 0.03);
-  border: 1px solid rgba(232, 160, 0, 0.08);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 0.5rem;
-}
-
-.meme-num {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.2rem;
-  color: #4a3a20;
-  display: block;
-}
-
-.meme-placeholder {
-  font-family: 'Oswald', sans-serif;
-  font-size: 0.55rem;
-  font-weight: 400;
-  color: #3a2a10;
-  letter-spacing: 0.15em;
-  display: block;
-  margin-top: 0.3rem;
-}
-
 /* Socials grid */
 .socials-grid {
   display: grid;
@@ -1389,13 +1000,6 @@ body {
   .nav-social svg {
     width: 16px;
     height: 16px;
-  }
-
-  /* Drop decorative fake stats on phones */
-  #hud-health-vc,
-  #hud-kills,
-  #hud-ammo {
-    display: none;
   }
 
   #hud-wanted-vc {
