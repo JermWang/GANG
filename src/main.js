@@ -132,7 +132,8 @@ function setupExternalLinks() {
   const urls = {
     // Dexscreener resolves by mint address, so this needs no configuration
     dexscreener: import.meta.env.VITE_DEXSCREENER_URL || `https://dexscreener.com/solana/${mint}`,
-    buy: import.meta.env.VITE_BUY_URL,
+    // pump.fun resolves by mint and keeps working after the token bonds
+    buy: import.meta.env.VITE_BUY_URL || `https://pump.fun/coin/${mint}`,
   };
 
   document.querySelectorAll('[data-external]').forEach((el) => {
