@@ -127,6 +127,29 @@ async function init() {
   animate();
 }
 
+function setupExternalLinks() {
+  const urls = {
+    dexscreener: import.meta.env.VITE_DEXSCREENER_URL,
+    buy: import.meta.env.VITE_BUY_URL,
+    discord: import.meta.env.VITE_DISCORD_URL,
+  };
+
+  document.querySelectorAll('[data-external]').forEach((el) => {
+    const url = urls[el.dataset.external];
+    if (url) {
+      el.href = url;
+      el.classList.remove('link-pending');
+    } else {
+      // No URL yet — keep it visible but inert rather than a dead "#" link
+      el.removeAttribute('href');
+      el.removeAttribute('target');
+      el.classList.add('link-pending');
+      el.setAttribute('aria-disabled', 'true');
+      el.title = 'Coming soon';
+    }
+  });
+}
+
 function setupNavBar() {
   const overlay = document.getElementById('panel-overlay');
   const navLinks = document.querySelectorAll('.nav-link[data-panel]');
@@ -353,4 +376,7 @@ function setupIntro() {
 // ============================
 // START
 // ============================
+// Wire external links immediately — they must never be left as dead "#"
+// links, even before the intro finishes and init() runs.
+setupExternalLinks();
 setupIntro();

@@ -10,13 +10,13 @@ export const GTAShader = {
     time: { value: 0 },
     // Color grading
     warmth: { value: 0.2 },          // Orange/warm push
-    contrast: { value: 1.08 },
+    contrast: { value: 1.02 },
     saturation: { value: 1.15 },
     brightness: { value: 1.2 },
     // Film grain
     grainIntensity: { value: 0.02 },
     // Vignette
-    vignetteIntensity: { value: 0.25 },
+    vignetteIntensity: { value: 0.14 },
     vignetteRadius: { value: 0.9 },
   },
 

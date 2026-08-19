@@ -1308,3 +1308,351 @@ body {
 .panel::-webkit-scrollbar { width: 4px; }
 .panel::-webkit-scrollbar-track { background: transparent; }
 .panel::-webkit-scrollbar-thumb { background: rgba(232, 160, 0, 0.2); }
+
+/* ================================================
+   PENDING EXTERNAL LINKS
+   Links with no URL configured yet (see .env) render
+   inert instead of pointing at a dead "#".
+   ================================================ */
+.link-pending {
+  opacity: 0.35;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(1);
+}
+
+/* ================================================
+   RESPONSIVE — tablet
+   ================================================ */
+@media (max-width: 900px) {
+  #gang-nav {
+    padding: 0 1rem;
+  }
+
+  .nav-link {
+    font-size: 0.72rem;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .nav-logo-text {
+    font-size: 1.35rem;
+  }
+
+  #hud-radar-vc {
+    width: 128px;
+    height: 128px;
+    bottom: 16px;
+    left: 16px;
+  }
+
+  .panel-header h2 {
+    font-size: 1.6rem;
+  }
+}
+
+/* ================================================
+   RESPONSIVE — phone
+   The HUD stat readouts (health / kills / ammo) are
+   decorative only, so they are dropped on small
+   screens rather than crowding the viewport.
+   ================================================ */
+@media (max-width: 600px) {
+  #gang-nav {
+    height: 44px;
+    padding: 0 0.6rem;
+    gap: 0.5rem;
+  }
+
+  .nav-logo-text {
+    font-size: 1.15rem;
+  }
+
+  /* Let the five nav items scroll horizontally instead of overflowing */
+  .nav-links {
+    flex: 1;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    justify-content: flex-start;
+  }
+
+  .nav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-link {
+    font-size: 0.65rem;
+    padding: 0.35rem 0.4rem;
+    white-space: nowrap;
+  }
+
+  .nav-social svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Drop decorative fake stats on phones */
+  #hud-health-vc,
+  #hud-kills,
+  #hud-ammo {
+    display: none;
+  }
+
+  #hud-wanted-vc {
+    top: 52px;
+    right: 10px;
+  }
+
+  .vc-star {
+    font-size: 1rem;
+  }
+
+  #hud-radar-vc {
+    width: 92px;
+    height: 92px;
+    bottom: 12px;
+    left: 12px;
+    border-width: 3px;
+  }
+
+  .radar-n {
+    font-size: 0.65rem;
+    bottom: 4px;
+  }
+
+  #hud-bottom-right {
+    bottom: 12px;
+    right: 10px;
+    gap: 4px;
+  }
+
+  #hud-contract {
+    font-size: 0.6rem;
+    padding: 3px 7px;
+    max-width: 58vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .contract-addr {
+    font-size: 0.55rem;
+  }
+
+  .hud-action-btn {
+    font-size: 0.58rem;
+    padding: 4px 7px;
+  }
+
+  .hud-action-btn svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  /* --- Start screen --- */
+  #start-screen {
+    padding: 1rem;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .start-logo {
+    width: 84%;
+    max-width: 320px;
+  }
+
+  .start-center {
+    gap: 1rem;
+    width: 100%;
+  }
+
+  /* A full Solana address must wrap rather than overflow the screen */
+  .copy-ca-btn {
+    max-width: 92vw;
+    padding: 0.65rem 0.9rem;
+    gap: 0.5rem;
+    font-size: 0.68rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .ca-label {
+    font-size: 0.85rem;
+  }
+
+  .ca-addr {
+    word-break: break-all;
+    text-align: center;
+  }
+
+  .start-social-btn {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* --- Panels --- */
+  #panel-overlay {
+    padding: 0.5rem;
+    padding-top: 48px;
+  }
+
+  .panel {
+    width: 100%;
+    max-height: calc(100vh - 60px);
+    max-height: calc(100dvh - 60px);
+  }
+
+  .panel-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .panel-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .panel-header-line {
+    left: 1rem;
+    right: 1rem;
+  }
+
+  .panel-body {
+    padding: 1rem;
+  }
+
+  .panel-body h3 {
+    font-size: 1.25rem;
+  }
+
+  .panel-desc {
+    font-size: 0.78rem;
+  }
+
+  /* Stack mission cards: badge + reward on one row, copy beneath */
+  .mission-card {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.7rem 0.8rem;
+  }
+
+  .mission-info {
+    flex: 1 1 100%;
+    order: 3;
+  }
+
+  .mission-rank {
+    order: 1;
+    font-size: 0.68rem;
+  }
+
+  .mission-reward {
+    order: 2;
+    margin-left: auto;
+    font-size: 1rem;
+  }
+
+  .wanted-row {
+    grid-template-columns: 1.4rem 1fr 2.6rem 3.6rem;
+    gap: 0.35rem;
+    padding: 0.5rem 0.4rem;
+    font-size: 0.75rem;
+  }
+
+  .wanted-row.header {
+    font-size: 0.6rem;
+  }
+
+  .rank-tiers {
+    gap: 0.4rem;
+  }
+
+  .rank-card {
+    min-width: 0;
+    flex: 1 1 28%;
+    padding: 0.6rem 0.5rem;
+  }
+
+  .rank-icon {
+    font-size: 1.2rem;
+  }
+
+  .rank-name {
+    font-size: 0.7rem;
+  }
+
+  .rank-req {
+    font-size: 0.58rem;
+  }
+
+  .claim-links,
+  .panel-buttons {
+    flex-direction: column;
+  }
+
+  .token-row {
+    font-size: 0.75rem;
+    gap: 0.75rem;
+  }
+
+  .token-row .mono {
+    word-break: break-all;
+    text-align: right;
+  }
+
+  /* --- Intro --- */
+  #intro-start-btn {
+    font-size: 1rem;
+    padding: 0.7rem 1.5rem;
+  }
+
+  .intro-logo {
+    width: 80%;
+    max-width: 300px;
+  }
+}
+
+/* Very narrow phones */
+@media (max-width: 380px) {
+  .nav-socials {
+    display: none;
+  }
+
+  #hud-radar-vc {
+    width: 78px;
+    height: 78px;
+  }
+
+  .socials-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Landscape phones — vertical space is the constraint */
+@media (max-height: 500px) and (orientation: landscape) {
+  #hud-radar-vc {
+    width: 84px;
+    height: 84px;
+  }
+
+  .start-logo {
+    max-width: 240px;
+    width: 46%;
+  }
+
+  #start-screen {
+    gap: 0.6rem;
+  }
+
+  .panel {
+    max-height: calc(100vh - 52px);
+    max-height: calc(100dvh - 52px);
+  }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

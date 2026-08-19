@@ -7,17 +7,18 @@ const loader = new THREE.TextureLoader();
 const cache = {};
 
 function loadTex(path, repeatX = 1, repeatY = 1) {
-  const key = `${path}_${repeatX}_${repeatY}`;
-  if (cache[key]) return cache[key].clone();
+  // Cache one base texture per file. Clones share the underlying Source, so the
+  // image is fetched and decoded once no matter how many buildings reuse it.
+  let base = cache[path];
+  if (!base) {
+    base = loader.load(`/assets/textures/${path}`);
+    base.wrapS = THREE.RepeatWrapping;
+    base.wrapT = THREE.RepeatWrapping;
+    base.colorSpace = path.includes('norm') ? THREE.LinearSRGBColorSpace : THREE.SRGBColorSpace;
+    cache[path] = base;
+  }
 
-  const tex = loader.load(`/assets/textures/${path}`);
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.RepeatWrapping;
-  tex.repeat.set(repeatX, repeatY);
-  tex.colorSpace = path.includes('norm') ? THREE.LinearSRGBColorSpace : THREE.SRGBColorSpace;
-  cache[path] = tex;
-
-  const clone = tex.clone();
+  const clone = base.clone();
   clone.repeat.set(repeatX, repeatY);
   return clone;
 }

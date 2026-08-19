@@ -523,7 +523,8 @@ export class City {
     const car = this._createCarMesh();
     const laneZ = (ROAD_WIDTH / 4) * laneDir;
     car.position.set(startX, 0.18, laneZ);
-    car.rotation.y = laneDir > 0 ? -Math.PI / 2 : Math.PI / 2;
+    // Mesh faces local +Z; rot Y maps +Z to (sin, 0, cos), so +X lane => +PI/2
+    car.rotation.y = laneDir > 0 ? Math.PI / 2 : -Math.PI / 2;
     car.userData.baseSpeed = 8 + Math.random() * 4;
     car.userData.speed = car.userData.baseSpeed;
     car.userData.laneDir = laneDir;

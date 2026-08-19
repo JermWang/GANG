@@ -1,66 +1,74 @@
-# GANG CITY
+# $GANG — Grind And Never Give-up
 
-A Vice City style 3D web game built with Three.js.
+The official site for **$GANG** on Solana: a GTA-inspired landing page with a
+live Three.js city rendered behind the UI, plus mission / leaderboard / buy
+panels.
 
-## Features
-
-- **Tommy Vercetti Player Model** - Rigged character with 17 Mixamo animations
-- **3rd Person Camera** - GTA-style perspective with proper positioning
-- **Gun System** - Pistol attached to player's right hand bone
-- **NPC System** - Civilian characters with various models and animations
-- **City Environment** - Buildings, streets, and atmospheric lighting
-- **Audio System** - Ambient sounds and radio functionality
-- **Minimap** - GTA-style radar/map
-- **Post-processing** - Bloom, fog, and color grading effects
-- **Simplified Start Screen** - Contract address copy button and social links
+The page is a **cinematic landing site**, not a playable game — the camera
+orbits the city automatically and the HUD (health, wanted stars, radar) is
+decorative styling.
 
 ## Getting Started
 
-### Prerequisites
-- Node.js (v16 or higher)
-- npm or yarn
-
-### Installation
-
-1. Clone the repository
-```bash
-git clone https://github.com/JermWang/GANG.git
-cd GANG
-```
-
-2. Install dependencies
 ```bash
 npm install
-```
-
-3. Start the development server
-```bash
 npm run dev
 ```
 
-4. Open your browser and navigate to `http://localhost:3000`
+Then open `http://localhost:3000`.
 
-## Controls
+```bash
+npm run build      # production build -> dist/
+npm run preview    # serve the production build
+```
 
-- **WASD** - Move player
-- **Mouse** - Look around (click to lock pointer)
-- **Left Click** - Fire weapon
-- **R** - Toggle radio
+## Configuration
 
-## Game Assets
+Copy `.env.example` to `.env` and fill in what's live. Every value is optional:
+the contract address falls back to `TBA`, and any link left blank renders as a
+greyed-out "Coming soon" instead of a dead link.
 
-- Player model: Mixamo-rigged Tommy Vercetti
-- NPC models: Quaternius civilian character pack
-- Textures: Custom city textures
-- Audio: Ambient and radio sounds
+| Variable | Used for |
+| --- | --- |
+| `VITE_TOKEN_CONTRACT_ADDRESS` | CA shown on the start screen, HUD, and BUY panel |
+| `VITE_DEXSCREENER_URL` | Dexscreener links |
+| `VITE_BUY_URL` | Buy button (Raydium / Jupiter / pump.fun) |
+| `VITE_DISCORD_URL` | Discord invite card |
+
+On Vercel, set these under **Project → Settings → Environment Variables**, then
+redeploy. Vite inlines `VITE_*` values at build time, so a rebuild is required
+for changes to take effect.
+
+## Project Structure
+
+```
+index.html          Markup: nav, intro overlay, start screen, HUD, panels
+src/main.js         Entry point — renderer, camera orbit, panel + link wiring
+src/city.js         Procedural city geometry and traffic
+src/assetLoader.js  Texture loading and shared materials
+src/textures.js     Procedural canvas textures
+src/lighting.js     Sun, ambient, hemisphere lighting and skybox
+src/postprocessing.js  Color grading, film grain, vignette
+src/minimap.js      Decorative radar
+src/audio.js        Ambient loop and radio toggle
+src/styles.css      All UI styling, including responsive breakpoints
+public/             Static assets served at the site root
+```
 
 ## Tech Stack
 
-- **Three.js** - 3D graphics engine
-- **Vite** - Build tool and dev server
-- **JavaScript** - Game logic and interactions
-- **CSS** - UI styling and animations
+- **Three.js** — 3D rendering
+- **Vite** — build tool and dev server
+- Vanilla JS + CSS, no framework
+
+## Notes
+
+- The intro video (`public/gang-promo.mp4`) is encoded for web delivery
+  (H.264, CRF 23, `+faststart`). Re-encode rather than dropping in a raw
+  export — the original was 71 MB.
+- The radio track in `public/` is a copyrighted Rockstar recording. Replace it
+  with licensed or original audio before any commercial use.
 
 ## License
 
-This project is for educational purposes. All game assets belong to their respective owners.
+Assets belong to their respective owners.

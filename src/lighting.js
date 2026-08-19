@@ -3,12 +3,14 @@ import * as THREE from 'three';
 export function setupLighting(scene) {
   // GTA San Andreas warm sunset/dusk atmosphere
 
-  // Bright ambient for sunny day
-  const ambient = new THREE.AmbientLight('#ffffff', 0.8);
+  // Ambient + hemisphere + fill all reach surfaces the sun cannot, so they
+  // carry the shadow detail. Raised (and the sun eased back) to keep shadowed
+  // ground readable instead of crushing to near-black.
+  const ambient = new THREE.AmbientLight('#ffffff', 2.0);
   scene.add(ambient);
 
   // Main sun — bright afternoon light
-  const sun = new THREE.DirectionalLight('#fff8e0', 3.5);
+  const sun = new THREE.DirectionalLight('#fff8e0', 2.5);
   sun.position.set(-40, 60, 30);
   sun.castShadow = true;
   sun.shadow.mapSize.width = 2048;
@@ -23,12 +25,12 @@ export function setupLighting(scene) {
   scene.add(sun);
 
   // Fill light — sky bounce
-  const fill = new THREE.DirectionalLight('#a0c0e0', 1.5);
+  const fill = new THREE.DirectionalLight('#a0c0e0', 2.3);
   fill.position.set(30, 50, -20);
   scene.add(fill);
 
   // Hemisphere — bright blue sky, warm ground bounce
-  const hemi = new THREE.HemisphereLight('#87ceeb', '#c0a080', 1.8);
+  const hemi = new THREE.HemisphereLight('#87ceeb', '#c0a080', 3.2);
   scene.add(hemi);
 
 }
